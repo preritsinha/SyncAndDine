@@ -1,7 +1,7 @@
 
 # SyncAndDine
 
-<u>preritsinha.pythonanywhere.com</u>
+**Link:** <u>preritsinha.pythonanywhere.com</u>
 
 SyncAndDine is a fun and interactive app for friends and couples to discover the perfect restaurant together. Inspired by the swiping feature from dating apps, SyncAndDine allows users to swipe through restaurant options, like or dislike them, and find their ideal dining experience based on mutual preferences.
 
@@ -57,7 +57,7 @@ This will run the backend on `http://127.0.0.1:5000/`.
 
 ### 4. Access the Application
 
-- Open `http://127.0.0.1:5000/recommend` in a browser or Postman to see the login page.
+- Open `http://127.0.0.1:5000` in a browser or Postman to see the login page.
 
 ## DISCLAIMER
 <b>Website navigation is not fully tested so you might encounter "Internal Server Error" more frequently than desired. <br> Thanks for your patience.</b>
