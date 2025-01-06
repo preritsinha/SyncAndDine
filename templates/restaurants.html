@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="filter-container">
+    <form id="filter-form" method="POST" action="/restaurants">
+        <label>Area: 
+            <input type="text" id="area-input" name="area" placeholder="Enter area name" list="area-list">
+        </label>
+        
+        <label>Rating: <input type="number" name="rating" placeholder="Min rating (1-5)" step="0.1"></label>
+        
+        <label>Cuisines: 
+            <select id="cuisines-select" name="cuisines">
+            </select>
+        </label>
+
+        <label>Veg/Non-Veg: 
+            <select name="veg_nonveg">
+                <option value="">Any</option>
+                <option value="veg">Veg</option>
+                <option value="non-veg">Non-Veg</option>
+            </select>
+        </label>
+        
+        <label>Open Now: <input type="checkbox" name="open_now"></label>
+        
+        <label>Restaurant Type: 
+            <select id="rest-type-select" name="rest_type">
+            </select>
+        </label>
+
+        <label>Approx Cost: <input type="number" name="cost" placeholder="Max cost for two"></label>
+        
+        <button type="submit" class="btn-primary">Apply Filters</button>
+    </form>
+</div>
+
+<div id="restaurant-card" class="card-container"></div>
+
+<!-- Finish Button -->
+<br>
+<button id="finish-btn" class="btn-primary">Finish</button>
+<br><br>
+
+<script>
+    let currentIndex = 0;
+    let userSwipes = {};  // Store swipes here (restaurant_id => 'like' or 'dislike')
+
+    // Function to load next restaurant card
+    function loadNextCard() {
+        axios.get(`/swipe_next?index=${currentIndex}`)
+            .then(response => {
+                if (response.data.status === 'success') {
+                    const restaurant = response.data.restaurant;
+                    document.getElementById('restaurant-card').innerHTML = `
+                        <div class="card">
+                            <h3>${restaurant.name}</h3>
+                            <p>${restaurant.location}</p>
+                            <p>Rating: ${restaurant.rate}</p>
+                            <p>Cuisine: ${restaurant.cuisines}</p>
+                            <p>Cost for Two: ${restaurant['approx_cost(for two people)']}</p>
+                            <button onclick="swipe('like', ${restaurant.id})">Like</button>
+                            <button onclick="swipe('dislike', ${restaurant.id})">Dislike</button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('restaurant-card').innerHTML = '<p>No more restaurants.</p>';
+                }
+            });
+    }
+
+    // Function to handle swipes (like/dislike)
+    function swipe(action, restaurantId) {
+        // Store the swipe for this restaurant
+        userSwipes[restaurantId] = action;
+
+        // Move to next restaurant
+        currentIndex++;
+        loadNextCard();
+    }
+
+    // Function to mark user as finished and send all swipes to backend
+    // Function to handle swipes (like/dislike)
+    function swipe(action) {
+        const restaurantId = currentIndex;  // Get the restaurant ID from the current index
+        axios.post('/swipe', { 
+            restaurant_id: restaurantId, 
+            swipe_type: action 
+        })
+        .then(response => {
+            console.log(response.data.message);  // Log the response message for debugging
+            currentIndex++;  // Move to the next restaurant
+            loadNextCard();  // Load the next card
+        })
+        .catch(error => {
+            alert('Error saving swipe: ' + error.message);
+        });
+    }
+
+    function finish() {
+        axios.post('/finish', { swipes: userSwipes })
+            .then(response => {
+                if (response.data.status === 'success') {
+                    alert('You and your friends have completed swiping. Matches found!');
+                    // Display matches if any
+                    const matches = response.data.matches;
+                    if (matches.length > 0) {
+                        let matchHTML = '<h3>Matched Restaurants:</h3><ul>';
+                        matches.forEach(match => {
+                            matchHTML += `<li>${match.name} - ${match.location}</li>`;
+                        });
+                        matchHTML += '</ul>';
+                        document.getElementById('restaurant-card').innerHTML = matchHTML;
+                    } else {
+                        document.getElementById('restaurant-card').innerHTML = '<p>No matches found.</p>';
+                    }
+                } else if (response.data.status === 'waiting') {
+                    alert('You have finished swiping, waiting for your friends.');
+                }
+            })
+            .catch(error => {
+                alert('Error finishing swipes: ' + error.message);
+            });
+    }
+
+    // Initial load of the first card
+    loadNextCard();
+
+    // Fetch areas, cuisines, and restaurant types dynamically from the merged endpoint
+    axios.get('/get_filters')  // This endpoint returns areas, cuisines, and restaurant types
+        .then(response => {
+            const filters = response.data;
+            
+            // Populating Areas (datalist remains as is for Area input)
+            const areas = filters.areas;
+            const areaInput = document.getElementById('area-input');
+            const areaDataList = document.createElement('datalist');
+            areaDataList.id = 'area-list';
+            areas.forEach(area => {
+                const option = document.createElement('option');
+                option.value = area;
+                areaDataList.appendChild(option);
+            });
+            document.querySelector('form').appendChild(areaDataList);
+
+            // Populating Cuisines Dropdown
+            const cuisines = filters.cuisines;
+            const cuisinesSelect = document.getElementById('cuisines-select');
+            cuisines.forEach(cuisine => {
+                const option = document.createElement('option');
+                option.value = cuisine;
+                option.textContent = cuisine;
+                cuisinesSelect.appendChild(option);
+            });
+
+            // Populating Restaurant Types Dropdown
+            const restTypes = filters.rest_types;
+            const restTypeSelect = document.getElementById('rest-type-select');
+            restTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                restTypeSelect.appendChild(option);
+            });
+        });
+
+    // Add event listener to the Finish button
+    document.getElementById('finish-btn').addEventListener('click', finish);
+</script>
+{% endblock %}
