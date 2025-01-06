@@ -1,7 +1,9 @@
 
 # SyncAndDine
 
-**Link:** <u>preritsinha.pythonanywhere.com</u>
+**Dataset:** https://www.kaggle.com/code/bablukd/zomato-bangalore-restaurant-rating-prediction/input#
+
+**Link:** https://preritsinha.pythonanywhere.com
 
 SyncAndDine is a fun and interactive app for friends and couples to discover the perfect restaurant together. Inspired by the swiping feature from dating apps, SyncAndDine allows users to swipe through restaurant options, like or dislike them, and find their ideal dining experience based on mutual preferences.
 
