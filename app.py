@@ -38,7 +38,9 @@ class User(db.Model):
                               backref=db.backref('friend_of', lazy='dynamic'),
                               lazy='dynamic')
 
-restaurant_data = pd.read_csv('restaurants.csv')
+csv_path = os.path.join(os.path.dirname(__file__), 'restaurants.csv')
+restaurant_data = pd.read_csv(csv_path)
+
 restaurant_data.fillna("",inplace=True)
 def clean_rate(value):
     if value is None or pd.isna(value):  # Check for None or NaN
@@ -125,7 +127,7 @@ def register():
 @app.route('/profile')
 def profile():
     user = User.query.filter_by(username=session['username']).first()
-    invite_link = f"http://localhost:5000/register/{user.username}"  # Example of invite link
+    invite_link = f"{request.url_root}register/{user.username}"  # Example of invite link
     return render_template('profile.html', user=user, invite_link=invite_link)
 
 @app.route('/get_filters', methods=['GET'])
@@ -134,7 +136,7 @@ def get_filters():
     areas = df['location'].dropna().unique().tolist()
     cuisines = pd.Series(df['cuisines'].str.split(',').explode().str.strip().unique()).tolist()
     rest_types = pd.Series(df['rest_type'].str.split(',').explode().str.strip().unique()).tolist()
-    
+
     # Return a merged response
     return jsonify({
         'areas': areas,
@@ -220,7 +222,7 @@ def swipe():
     user = User.query.filter_by(username=session['username']).first()
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found'}), 404
-    
+
     print("Current user:", user)
     print("Current swipes:", user.swipes)
 
