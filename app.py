@@ -406,4 +406,4 @@ if __name__ == '__main__':
     if not os.path.exists('/instance/syncanddine.db'):
         with app.app_context():
             db.create_all()
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)))
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)),debug=True)
