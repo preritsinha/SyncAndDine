@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="connection-container">
+    <div class="connection-card">
+        <h1>Welcome {{ user.username }}</h1>
+
+        <!-- Section: Connected Friends -->
+        <div class="section">
+            <h3>Connected Friends</h3>
+            {% if friends|length > 0 %}
+            <ul>
+                {% for friend in user.friends %}
+                <li class="friend-item">
+                    <span class="friend-name">{{ friend.username }}</span>
+                    <form method="POST" action="/remove_friend" class="remove-friend-form">
+                        <input type="hidden" name="friend_username" value="{{ friend.username }}">
+                        <button type="submit" class="btn-danger">Remove</button>
+                    </form>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="no-friends-message">No friends added yet</p>
+            {% endif %}
+        </div>
+
+        <!-- Section: Add a Friend -->
+        <div class="section">
+            <h3>Connect</h3>
+            <form method="POST" action="/add_friend" class="form-inline" id="add-friend-form">
+                <input type="text" name="username" id="friend-username" placeholder="Username or Invite Link" required>&nbsp;&nbsp;&nbsp;
+                <button type="submit" class="btn-primary">Add Connection</button>
+            </form>
+        </div>
+
+        <!-- Section: Create a Group -->
+        <!-- <div class="section">
+            <h3>Create a Group</h3>
+            <form method="POST" action="/connection" class="form-inline">
+                <label for="group_name">Group Name</label>
+                <input type="text" name="group_name" id="group_name" required>
+                
+                <label for="members">Select Members</label>
+                <select name="members" multiple required>
+                    {% for friend in friends %}
+                    <option value="{{ friend.username }}">{{ friend.username }}</option>
+                    {% endfor %}
+                </select>
+                
+                <button type="submit" name="create_group" class="btn-primary">Create Group</button>
+            </form>
+        </div> -->
+
+        <!-- Section: View Groups -->
+        <!-- <div class="section">
+            <h3>Your Groups</h3>
+            {% if groups|length > 0 %}
+            <ul>
+                {% for group in groups %}
+                <li class="group-item">
+                    <strong>{{ group.name }}</strong> (Admin)
+                    <ul>
+                        {% for member in group.members %}
+                        <li>
+                            {{ member.username }}
+                            <form method="POST" action="/connection" class="remove-friend-form">
+                                <input type="hidden" name="group_id" value="{{ group.id }}">
+                                <input type="hidden" name="friend_username" value="{{ member.username }}">
+                                <button type="submit" name="remove_from_group" class="btn-danger">Remove</button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="no-groups-message">No groups created yet</p>
+            {% endif %}
+        </div> -->
+
+        <!-- Section: Invite Link -->
+        <div class="section">
+            <h3>Invite Friends:</h3>
+            <input type="text" id="invite-link" value="{{ invite_link }}" readonly class="readonly-input" style="display: none;">
+            <button id="copy-button" data-clipboard-target="#invite-link">Copy Invite Link</button>
+        </div>
+    </div>
+</div>
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.8/clipboard.min.js"></script>
+    
+    <script>
+        var clipboard = new ClipboardJS('#copy-button');
+        clipboard.on('success', function(e) { alert('Invite link copied to clipboard!'); });
+        clipboard.on('error', function(e) { alert('Failed to copy invite link. Please try again!'); });
+
+        document.getElementById('friend-username').addEventListener('input', function() {
+            const inviteLink = this.value;
+            const regex = /\/register\/([a-zA-Z0-9_]+)/;
+            const match = inviteLink.match(regex);
+            if (match && match[1]) {
+                this.value = match[1];
+            }
+        });
+    </script>
+{% endblock %}
+{% endblock %}

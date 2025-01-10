@@ -6,6 +6,7 @@ from sqlalchemy import PickleType
 from flask_bcrypt import Bcrypt
 import pandas as pd
 import os
+from datetime import datetime,timezone
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -31,12 +32,38 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     swipes = db.Column(MutableDict.as_mutable(PickleType), default={})
     finished = db.Column(db.Boolean, default=False)
+    filter_preferences = db.Column(MutableDict.as_mutable(PickleType), default={})
+    # Relationship to ConnectionGroup: user can be admin of multiple groups
+    admin_groups = db.relationship('ConnectionGroup', backref='admin', lazy=True)
+    # Friendship table: users can have multiple friends
     friends = db.relationship('User',
                               secondary=friendship,
                               primaryjoin=id == friendship.c.user_id,
                               secondaryjoin=id == friendship.c.friend_id,
                               backref=db.backref('friend_of', lazy='dynamic'),
                               lazy='dynamic')
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+class ConnectionGroup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    # ForeignKey referencing User (admin of the group)
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # Relationship to GroupMember
+    group_members = db.relationship('GroupMember', backref='group', lazy=True)
+    def __repr__(self):
+        return f'<ConnectionGroup {self.name}>'
+
+class GroupMember(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    # ForeignKey referencing User
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # ForeignKey referencing ConnectionGroup
+    group_id = db.Column(db.Integer, db.ForeignKey('connection_group.id'), nullable=False)
+    join_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    def __repr__(self):
+        return f'<GroupMember {self.user.username}>'
 
 csv_path = os.path.join(os.path.dirname(__file__), 'restaurants.csv')
 restaurant_data = pd.read_csv(csv_path)
@@ -57,7 +84,7 @@ restaurant_data['rate'] = restaurant_data['rate'].apply(clean_rate)
 @app.route('/')
 def home():
     # if 'username' in session:
-        # return redirect(url_for('profile'))
+        # return redirect(url_for('connection'))
     return render_template('login.html')
 
 @app.route('/login', methods=['GET','POST'])
@@ -65,11 +92,8 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        print(f"Received username: {username}, password: {password}")
         user = User.query.filter_by(username=username).first()
-        print(f"Found user: {user}")  # Check if user is None or the actual user object
         if user:
-            print(f"Stored password: {user.password}")
             # if bcrypt.check_password_hash(user.password, password):
             if user.password==password:
                 print(f"Login successful for user: {user}")
@@ -79,7 +103,7 @@ def login():
                     user.finished = False  # Reset the finished status to False
                     user.swipes = {}
                     db.session.commit()  # Commit the change to the database
-                return redirect(url_for('profile'))
+                return redirect(url_for('connection'))
             else:
                 print("Password mismatch.")
                 flash("Invalid username or password", "danger")
@@ -124,11 +148,46 @@ def register():
             return redirect(url_for('login'))
     return render_template('register.html')
 
-@app.route('/profile')
-def profile():
+@app.route('/connection', methods=['GET', 'POST'])
+def connection():
+    if 'username' not in session:
+        return redirect(url_for('login'))  # Redirect if not logged in
+    
     user = User.query.filter_by(username=session['username']).first()
-    invite_link = f"{request.url_root}register/{user.username}"  # Example of invite link
-    return render_template('profile.html', user=user, invite_link=invite_link)
+    invite_link = f"{request.url_root}add_friend?username={user.username}"
+    
+    # If the request is to create a group
+    if request.method == 'POST':
+        if 'create_group' in request.form:
+            group_name = request.form['group_name']
+            members = request.form.getlist('members')  # List of friends to add to the group
+            
+            group = ConnectionGroup(name=group_name, admin=user)
+            db.session.add(group)
+            
+            for member_username in members:
+                member = User.query.filter_by(username=member_username).first()
+                if member:
+                    group.members.append(member)
+            
+            db.session.commit()
+        
+        elif 'remove_from_group' in request.form:
+            group_id = request.form['group_id']
+            friend_username = request.form['friend_username']
+            group = ConnectionGroup.query.get(group_id)
+            if group:
+                friend = User.query.filter_by(username=friend_username).first()
+                if friend in group.members:
+                    group.members.remove(friend)
+                    db.session.commit()
+
+    user_friends = user.friends.all()
+    user_groups = user.admin_groups  # Get groups where user is the admin
+    return render_template('connection.html', user=user, friends=user_friends, invite_link=invite_link, groups=user_groups)
+
+
+
 
 @app.route('/get_filters', methods=['GET'])
 def get_filters():
@@ -144,22 +203,88 @@ def get_filters():
         'rest_types': rest_types
     })
 
-@app.route('/add_friend', methods=['POST'])
+@app.route('/add_friend', methods=['POST', 'GET'])
 def add_friend():
     if 'username' not in session:
         return redirect(url_for('home'))
-    friend_username = request.form.get('username')
     user = User.query.filter_by(username=session['username']).first()  # Get current user
-    friend = User.query.filter_by(username=friend_username).first()  # Get friend by username
-    if friend and friend != user:  # Ensure the user isn't adding themselves as a friend
-        # Add friend to user's friend list (many-to-many relationship)
-        user.friends.append(friend)
-        db.session.commit()
-        flash('Friend added successfully!', 'success')
-    else:
-        flash('Friend not found or you cannot add yourself!', 'danger')
-    return redirect(url_for('profile'))
+    # Handle GET request for invite links
+    if request.method == 'GET':
+        friend_username = request.args.get('username')  # Extract username from query params
+        friend = User.query.filter_by(username=friend_username).first()  # Get friend by username
+        if friend and friend != user:  # Ensure the user isn't adding themselves as a friend
+            if friend in user.friends:
+                flash('Friend is already in your friend list!', 'info')
+            else:
+                user.friends.append(friend)
+                db.session.commit()
+                flash('Friend added successfully via invite link!', 'success')
+        else:
+            flash('Invalid invite link or user not found!', 'danger')
+        return redirect(url_for('connection'))
+    # Handle POST request for manual friend addition
+    if request.method == 'POST':
+        friend_username = request.form.get('username')
+        friend = User.query.filter_by(username=friend_username).first()  # Get friend by username
+        if friend and friend != user:  # Ensure the user isn't adding themselves as a friend
+            if friend in user.friends:
+                flash('Friend is already in your friend list!', 'info')
+            else:
+                user.friends.append(friend)
+                db.session.commit()
+                flash('Friend added successfully!', 'success')
+        else:
+            flash('Friend not found or you cannot add yourself!', 'danger')
+        return redirect(url_for('connection'))
 
+@app.route('/remove_friend', methods=['POST'])
+def remove_friend():
+    if 'username' not in session:
+        return redirect(url_for('home'))
+
+    user = User.query.filter_by(username=session['username']).first()  # Get current user
+    friend_username = request.form.get('friend_username')
+    friend = User.query.filter_by(username=friend_username).first()  # Get friend by username
+
+    if friend and friend in user.friends:  # Ensure the friend exists and is in the user's friend list
+        user.friends.remove(friend)  # Remove friend from the list
+        db.session.commit()  # Commit changes to the database
+        flash(f'Removed {friend.username} from your friend list.', 'success')
+    else:
+        flash('Friend not found in your list.', 'danger')
+
+    return redirect(url_for('connection'))
+
+@app.route('/set_filters', methods=['POST'])
+def set_filters():
+    if 'username' not in session:
+        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
+    
+    user = User.query.filter_by(username=session['username']).first()
+
+    # Check if the user is an admin for any of their friends
+    admin_friendship = db.session.query(friendship).filter_by(user_id=user.id).first()
+    if admin_friendship and admin_friendship.is_admin:
+        # Get the filter values from the form
+        cuisine = request.form.get('cuisine')
+        area = request.form.get('area')
+        # Save the filters in the user's connection
+        user.filter_preferences = {
+            'cuisine': cuisine,
+            'area': area
+        }
+        db.session.commit()
+
+        # Sync filters to all friends
+        for friend in user.friends:
+            friend.filter_preferences = user.filter_preferences
+        db.session.commit()
+
+        flash('Filters set and synced with your friends!', 'success')
+    else:
+        flash('You must be an admin to set filters.', 'danger')
+
+    return redirect(url_for('connection'))
 
 @app.route('/restaurants', methods=['GET', 'POST'])
 def restaurants():
@@ -281,4 +406,4 @@ if __name__ == '__main__':
     if not os.path.exists('/instance/syncanddine.db'):
         with app.app_context():
             db.create_all()
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)))
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)),debug=True)
