@@ -6,14 +6,19 @@ from sqlalchemy import PickleType
 from flask_bcrypt import Bcrypt
 import pandas as pd
 import os
-from datetime import datetime,timezone
+from datetime import datetime, timezone
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///syncanddine.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key'  # JWT configuration
 
 db = SQLAlchemy(app)
+jwt = JWTManager(app)
+CORS(app)
 
 if not os.path.exists('instance/syncanddine.db'):
     with app.app_context():
@@ -33,9 +38,7 @@ class User(db.Model):
     swipes = db.Column(MutableDict.as_mutable(PickleType), default={})
     finished = db.Column(db.Boolean, default=False)
     filter_preferences = db.Column(MutableDict.as_mutable(PickleType), default={})
-    # Relationship to ConnectionGroup: user can be admin of multiple groups
     admin_groups = db.relationship('ConnectionGroup', backref='admin', lazy=True)
-    # Friendship table: users can have multiple friends
     friends = db.relationship('User',
                               secondary=friendship,
                               primaryjoin=id == friendship.c.user_id,
@@ -48,18 +51,14 @@ class User(db.Model):
 class ConnectionGroup(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
-    # ForeignKey referencing User (admin of the group)
     admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    # Relationship to GroupMember
     group_members = db.relationship('GroupMember', backref='group', lazy=True)
     def __repr__(self):
         return f'<ConnectionGroup {self.name}>'
 
 class GroupMember(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    # ForeignKey referencing User
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    # ForeignKey referencing ConnectionGroup
     group_id = db.Column(db.Integer, db.ForeignKey('connection_group.id'), nullable=False)
     join_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     def __repr__(self):
@@ -67,58 +66,45 @@ class GroupMember(db.Model):
 
 csv_path = os.path.join(os.path.dirname(__file__), 'restaurants.csv')
 restaurant_data = pd.read_csv(csv_path)
+restaurant_data.fillna("", inplace=True)
 
-restaurant_data.fillna("",inplace=True)
 def clean_rate(value):
-    if value is None or pd.isna(value):  # Check for None or NaN
+    if value is None or pd.isna(value):
         return ""
     if isinstance(value, str):
-        value = value.strip()  # Remove extra spaces
-        if '/' in value:  # Check if it has the '/5' format
+        value = value.strip()
+        if '/' in value:
             return float(value.split('/')[0])
-        elif value in ['NEW', '-']:  # Handle special cases
+        elif value in ['NEW', '-']:
             return ""
     return ""
+
 restaurant_data['rate'] = restaurant_data['rate'].apply(clean_rate)
 
 @app.route('/')
 def home():
-    # if 'username' in session:
-        # return redirect(url_for('connection'))
     return render_template('login.html')
 
-@app.route('/login', methods=['GET','POST'])
+@app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username).first()
-        if user:
-            # if bcrypt.check_password_hash(user.password, password):
-            if user.password==password:
-                print(f"Login successful for user: {user}")
-                session['username'] = username
-                user = User.query.filter_by(username=session['username']).first()
-                if user:
-                    user.finished = False  # Reset the finished status to False
-                    user.swipes = {}
-                    db.session.commit()  # Commit the change to the database
-                return redirect(url_for('connection'))
-            else:
-                print("Password mismatch.")
-                flash("Invalid username or password", "danger")
-        else:
-            print("User not found.")
-            flash("Invalid username or password", "danger")
-    return render_template('login.html')
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+    user = User.query.filter_by(username=username).first()
+    if user and user.password == password:
+        access_token = create_access_token(identity=username)
+        return jsonify(access_token=access_token), 200
+    return jsonify({'msg': 'Invalid username or password'}), 401
 
-@app.route('/logout', methods=['GET','POST'])
+@app.route('/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200
+
+@app.route('/logout', methods=['GET', 'POST'])
 def logout():
-    if 'username' not in session:
-        return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
-    session.pop('username', None)  # Remove the username from the session
+    session.pop('username', None)
     return render_template('login.html')
-
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -127,20 +113,14 @@ def register():
         email = request.form['email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
-
-        # Check if passwords match
         if password != confirm_password:
             flash('Passwords do not match.', 'danger')
             return render_template('register.html')
-
-        # Check if username already exists
         if User.query.filter_by(username=username).first():
             flash('Username already exists.', 'danger')
-        # Check if email already exists
         elif User.query.filter_by(email=email).first():
             flash('Email already exists.', 'danger')
         else:
-            # hashed_password = generate_password_hash(password, method='sha256')
             new_user = User(username=username, email=email, password=password)
             db.session.add(new_user)
             db.session.commit()
@@ -149,14 +129,11 @@ def register():
     return render_template('register.html')
 
 @app.route('/connection', methods=['GET', 'POST'])
+@jwt_required()
 def connection():
-    if 'username' not in session:
-        return redirect(url_for('login'))  # Redirect if not logged in
-    
-    user = User.query.filter_by(username=session['username']).first()
+    current_user = get_jwt_identity()
+    user = User.query.filter_by(username=current_user).first()
     invite_link = f"{request.url_root}add_friend?username={user.username}"
-    
-    # If the request is to create a group
     if request.method == 'POST':
         if 'create_group' in request.form:
             group_name = request.form['group_name']
@@ -181,13 +158,9 @@ def connection():
                 if friend in group.members:
                     group.members.remove(friend)
                     db.session.commit()
-
     user_friends = user.friends.all()
-    user_groups = user.admin_groups  # Get groups where user is the admin
+    user_groups = user.admin_groups
     return render_template('connection.html', user=user, friends=user_friends, invite_link=invite_link, groups=user_groups)
-
-
-
 
 @app.route('/get_filters', methods=['GET'])
 def get_filters():
@@ -195,14 +168,7 @@ def get_filters():
     areas = df['location'].dropna().unique().tolist()
     cuisines = pd.Series(df['cuisines'].str.split(',').explode().str.strip().unique()).tolist()
     rest_types = pd.Series(df['rest_type'].str.split(',').explode().str.strip().unique()).tolist()
-
-    # Return a merged response
-    return jsonify({
-        'areas': areas,
-        'cuisines': cuisines,
-        'rest_types': rest_types
-    })
-
+    return jsonify({'areas': areas, 'cuisines': cuisines, 'rest_types': rest_types})
 @app.route('/add_friend', methods=['POST', 'GET'])
 def add_friend():
     if 'username' not in session:
@@ -400,10 +366,8 @@ def finish():
 
     return jsonify({'status': 'waiting'})
 
-
-
 if __name__ == '__main__':
     if not os.path.exists('/instance/syncanddine.db'):
         with app.app_context():
             db.create_all()
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)),debug=True)
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 10000)), debug=True)
