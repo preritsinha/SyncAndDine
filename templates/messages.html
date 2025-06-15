@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncAndDine - Messages</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .message-bubble {
+            margin-bottom: 15px;
+        }
+        .message-sent {
+            text-align: right;
+        }
+        .message-received {
+            text-align: left;
+        }
+        .message-content {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 75%;
+        }
+        .message-sent .message-content {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .message-received .message-content {
+            background-color: #f0f0f0;
+        }
+        .message-time {
+            font-size: 0.75rem;
+            margin-top: 5px;
+        }
+        .message-sent .message-time {
+            color: #dee2e6;
+        }
+        .message-received .message-time {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">SyncAndDine</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/restaurants">Restaurants</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/connection">Connections</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/groups">Groups</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            {{ session.get('username') }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Messages with {{ friend.username }}</h1>
+            <a href="/connection" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i> Back to Connections
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
+                                <span>{{ friend.username[0].upper() }}</span>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">{{ friend.username }}</h5>
+                                <small class="text-muted">{{ friend.email }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body" style="height: 400px; overflow-y: auto;">
+                        <div class="messages-container">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="message-bubble {% if message.sender_id == current_user.id %}message-sent{% else %}message-received{% endif %}">
+                                        <div class="message-content">
+                                            <div>{{ message.content }}</div>
+                                            <div class="message-time">
+                                                {{ message.timestamp.strftime('%H:%M | %b %d') }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted my-5">
+                                    <p>No messages yet. Start the conversation!</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer">
+                        <form action="/messages/{{ friend.id }}" method="POST">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="content" placeholder="Type a message..." required>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Send
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Scroll to bottom of messages container
+            const messagesContainer = document.querySelector('.messages-container');
+            if (messagesContainer) {
+                messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>

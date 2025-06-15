@@ -1,7 +1,10 @@
 Flask
-Werkzeug
 Flask-SQLAlchemy
-SQLAlchemy
-flask-bcrypt
+Flask-Login
+Flask-WTF
+Flask-Migrate
+Flask-JWT-Extended
+Werkzeug
+email-validator
+python-dotenv
 pandas
-gunicorn

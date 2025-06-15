@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Messages with {{ friend.username }}</h1>
+    <a href="{{ url_for('social.connections') }}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i> Back to Connections
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-light">
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
+                        <span>{{ friend.username[0].upper() }}</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ friend.username }}</h5>
+                        <small class="text-muted">{{ friend.email }}</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body" style="height: 400px; overflow-y: auto;">
+                <div class="messages-container">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="message-bubble mb-3 {% if message.sender_id == current_user.id %}text-end{% endif %}">
+                                <div class="d-inline-block p-3 rounded-3 {% if message.sender_id == current_user.id %}bg-primary text-white{% else %}bg-light{% endif %}" style="max-width: 75%;">
+                                    <div>{{ message.content }}</div>
+                                    <small class="text-{% if message.sender_id == current_user.id %}light{% else %}muted{% endif %}">
+                                        {{ message.timestamp.strftime('%H:%M | %b %d') }}
+                                    </small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted my-5">
+                            <p>No messages yet. Start the conversation!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <form action="{{ url_for('social.messages', friend_id=friend.id) }}" method="POST">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="content" placeholder="Type a message..." required>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Scroll to bottom of messages container
+        const messagesContainer = document.querySelector('.messages-container');
+        if (messagesContainer) {
+            messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
+        }
+    });
+</script>
+{% endblock %}

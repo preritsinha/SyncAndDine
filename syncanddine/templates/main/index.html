@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="welcome-section">
+                <h1>Welcome to SyncAndDine</h1>
+                <p class="lead">"Connecting Hearts and Taste Buds with Every Meal Shared"</p>
+                <div class="mt-4">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg me-2">Sign Up</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x mb-3 text-primary"></i>
+                    <h3 class="card-title">Connect with Friends</h3>
+                    <p class="card-text">Add friends to your network and create dining groups to find the perfect restaurant together.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-utensils fa-3x mb-3 text-primary"></i>
+                    <h3 class="card-title">Discover Restaurants</h3>
+                    <p class="card-text">Browse and filter restaurants based on location, cuisine, price range, and more.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-thumbs-up fa-3x mb-3 text-primary"></i>
+                    <h3 class="card-title">Find Perfect Matches</h3>
+                    <p class="card-text">Swipe through restaurants and find matches based on everyone's preferences.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <h2>How It Works</h2>
+            <hr class="my-4">
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-3">
+            <div class="text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 60px; height: 60px;">
+                    <span class="fs-4">1</span>
+                </div>
+                <h4>Create an Account</h4>
+                <p>Sign up and create your profile</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 60px; height: 60px;">
+                    <span class="fs-4">2</span>
+                </div>
+                <h4>Add Friends</h4>
+                <p>Connect with your dining companions</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 60px; height: 60px;">
+                    <span class="fs-4">3</span>
+                </div>
+                <h4>Create Groups</h4>
+                <p>Form dining groups for specific occasions</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 60px; height: 60px;">
+                    <span class="fs-4">4</span>
+                </div>
+                <h4>Find Matches</h4>
+                <p>Discover restaurants everyone will love</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ group.name }}</h1>
+    <div>
+        <a href="{{ url_for('restaurants.list_restaurants', group_id=group.id) }}" class="btn btn-primary me-2">
+            <i class="fas fa-utensils me-2"></i> Browse Restaurants
+        </a>
+        <a href="{{ url_for('social.my_groups') }}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Groups
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Group Members</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <!-- Group Owner -->
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
+                                    <span>{{ group.owner.username[0].upper() }}</span>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">{{ group.owner.username }}</h6>
+                                    <small class="text-muted">Admin</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Group Members -->
+                    {% for member in group.members %}
+                        {% if member != group.owner %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-secondary text-white rounded-circle d-flex justify-content-center align-items-center me-3" style="width: 40px; height: 40px;">
+                                            <span>{{ member.username[0].upper() }}</span>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ member.username }}</h6>
+                                            <small class="text-muted">
+                                                {{ member.email }}
+                                                {% if member.id in admin_ids %}
+                                                    <span class="badge bg-primary ms-2">Admin</span>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex">
+                                        {% if current_user.id == group.owner_id %}
+                                            <form action="{{ url_for('social.toggle_admin', group_id=group.id, user_id=member.id) }}" method="POST" class="me-2">
+                                                <button type="submit" class="btn btn-sm {% if member.id in admin_ids %}btn-outline-secondary{% else %}btn-outline-primary{% endif %}">
+                                                    {% if member.id in admin_ids %}
+                                                        <i class="fas fa-user-shield"></i> Remove Admin
+                                                    {% else %}
+                                                        <i class="fas fa-user-shield"></i> Make Admin
+                                                    {% endif %}
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        
+                                        {% if is_admin %}
+                                            <form action="{{ url_for('social.remove_group_member', group_id=group.id, user_id=member.id) }}" method="POST">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-user-minus"></i> Remove
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                {% if current_user == group.owner and current_user.friends %}
+                    <div class="mt-4">
+                        <h6>Add Members</h6>
+                        <form action="{{ url_for('social.add_group_member', group_id=group.id) }}" method="POST" class="mt-3">
+                            <div class="input-group">
+                                <select class="form-select" id="user_id" name="user_id" required>
+                                    <option value="" selected disabled>Choose a friend</option>
+                                    {% for friend in current_user.friends %}
+                                        {% if friend not in group.members %}
+                                            <option value="{{ friend.id }}">{{ friend.username }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary">Add user</button>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Group Info</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    <strong>Created on:</strong> {{ group.created_at.strftime('%Y-%m-%d') }}
+                </p>
+                <p>
+                    <strong>Total Members:</strong> {{ group.members.count() }}
+                </p>
+                <p>
+                    <strong>Share Code:</strong>
+                    <span class="share-code">{{ group.share_code }}</span>
+                    <button class="btn btn-sm btn-outline-primary ms-2 copy-share-code" data-bs-toggle="tooltip" title="Copy to clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </p>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{{ url_for('restaurants.group_matches', group_id=group.id) }}" class="btn btn-success">
+                        <i class="fas fa-check-circle me-2"></i> View Matches
+                    </a>
+                    <a href="{{ url_for('restaurants.swipe_restaurants', group_id=group.id) }}" class="btn btn-primary">
+                        <i class="fas fa-exchange-alt me-2"></i> Swipe Restaurants
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Share Group</h5>
+            </div>
+            <div class="card-body">
+                <p>Invite friends to join this group by sharing the code:</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" value="{{ group.share_code }}" readonly id="share-code-input">
+                    <button class="btn btn-outline-primary copy-share-code" type="button">Copy</button>
+                </div>
+                <p class="text-muted small">
+                    Friends can join by entering this code in the "Join a Group" section.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Copy share code functionality
+        const copyButtons = document.querySelectorAll('.copy-share-code');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const shareCodeInput = document.getElementById('share-code-input');
+                const shareCode = shareCodeInput ? shareCodeInput.value : document.querySelector('.share-code').textContent;
+                
+                navigator.clipboard.writeText(shareCode).then(function() {
+                    // Show success message
+                    if (button.innerHTML.includes('Copy')) {
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                        
+                        setTimeout(function() {
+                            button.innerHTML = originalText;
+                        }, 2000);
+                    } else {
+                        button.innerHTML = '<i class="fas fa-check"></i>';
+                        
+                        setTimeout(function() {
+                            button.innerHTML = '<i class="fas fa-copy"></i>';
+                        }, 2000);
+                    }
+                }, function(err) {
+                    console.error('Could not copy text: ', err);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

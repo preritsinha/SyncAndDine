@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncAndDine - Groups</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .group-card {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        .group-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">SyncAndDine</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/restaurants">Restaurants</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/connection">Connections</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/groups">Groups</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            {{ session.get('username') }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="/logout">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>My Groups</h1>
+            <a href="/create_group" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Create Group
+            </a>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h3>My Groups</h3>
+            </div>
+        </div>
+
+        <div class="row">
+            {% if owned_groups or member_groups %}
+                {% for group in owned_groups %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card group-card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">{{ group.name }}</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <strong>Group Members ({{ group.members.count() }})</strong>
+                                </p>
+                                
+                                <div class="list-group mb-3">
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>{{ current_user.username }} (Admin)</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {% for member in group.members %}
+                                        {% if member != current_user %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>{{ member.username }}</span>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <a href="/edit_group/{{ group.id }}" class="btn btn-primary">Edit Group</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                {% for group in member_groups %}
+                    {% if group.owner != current_user %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card group-card h-100">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">{{ group.name }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">
+                                        <strong>Group Members ({{ group.members.count() }})</strong>
+                                    </p>
+                                    
+                                    <div class="list-group mb-3">
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>{{ group.owner.username }} (Admin)</span>
+                                            </div>
+                                        </div>
+                                        
+                                        {% for member in group.members %}
+                                            {% if member != group.owner %}
+                                            <div class="list-group-item">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span>{{ member.username }}</span>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    <div class="d-grid">
+                                        <a href="#" class="btn btn-primary">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h4>No groups yet</h4>
+                        <p>You don't have any groups yet. <a href="/create_group">Create a group</a> to get started!</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Join Group Form -->
+        <div class="row mt-5">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Join a Group</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="#" method="GET" id="join-group-form">
+                            <div class="mb-3">
+                                <label for="share_code" class="form-label">Enter Share Code</label>
+                                <input type="text" class="form-control" id="share_code" name="share_code" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Join Group</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle join group form submission
+            const joinGroupForm = document.getElementById('join-group-form');
+            if (joinGroupForm) {
+                joinGroupForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const shareCode = document.getElementById('share_code').value;
+                    window.location.href = "/join_group/" + shareCode;
+                });
+            }
+        });
+    </script>
+</body>
+</html>

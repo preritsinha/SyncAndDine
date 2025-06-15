@@ -1,0 +1,516 @@
+/* General Styles */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.footer {
+    margin-top: auto;
+}
+
+/* Light Mode Styles */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.card, .modal-content, .dropdown-menu {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    border: none;
+    box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0a58ca, #084298);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+body.dark-mode .navbar {
+    background-color: #1a1a1a !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid #333;
+}
+
+body.dark-mode .card,
+body.dark-mode .modal-content,
+body.dark-mode .dropdown-menu {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    border-color: #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .dropdown-item {
+    color: #e0e0e0;
+}
+
+body.dark-mode .dropdown-item:hover {
+    background-color: #2a2a2a;
+}
+
+body.dark-mode .btn-primary {
+    background: linear-gradient(135deg, #0d47a1, #1565c0);
+    box-shadow: 0 2px 5px rgba(21, 101, 192, 0.3);
+}
+
+body.dark-mode .btn-primary:hover {
+    background: linear-gradient(135deg, #1565c0, #1976d2);
+    box-shadow: 0 4px 8px rgba(21, 101, 192, 0.4);
+}
+
+body.dark-mode .form-control {
+    background-color: #2d2d2d;
+    border-color: #444;
+    color: #e0e0e0;
+}
+
+body.dark-mode .form-control:focus {
+    background-color: #333;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+body.dark-mode .footer {
+    background-color: #1a1a1a !important;
+    color: #e0e0e0;
+    border-top: 1px solid #333;
+}
+
+body.dark-mode .text-muted {
+    color: #aaa !important;
+}
+
+body.dark-mode .alert {
+    border: 1px solid #333;
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+}
+
+body.dark-mode .alert-success {
+    background-color: rgba(40, 167, 69, 0.2);
+    border-color: #28a745;
+    color: #8fd19e;
+}
+
+body.dark-mode .alert-danger {
+    background-color: rgba(220, 53, 69, 0.2);
+    border-color: #dc3545;
+    color: #ea868f;
+}
+
+body.dark-mode .alert-warning {
+    background-color: rgba(255, 193, 7, 0.2);
+    border-color: #ffc107;
+    color: #ffda6a;
+}
+
+body.dark-mode .alert-info {
+    background-color: rgba(13, 202, 240, 0.2);
+    border-color: #0dcaf0;
+    color: #6edff6;
+}
+
+body.dark-mode .table {
+    color: #e0e0e0;
+    border-color: #444;
+}
+
+body.dark-mode hr {
+    border-color: #444;
+}
+
+/* Auth Pages */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 450px;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: none;
+}
+
+body.dark-mode .auth-card {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.auth-header {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 25px;
+    text-align: center;
+    border-bottom: 1px solid #dee2e6;
+}
+
+body.dark-mode .auth-header {
+    background: linear-gradient(135deg, #2d2d2d, #1e1e1e);
+    border-bottom: 1px solid #444;
+}
+
+.auth-body {
+    padding: 30px;
+}
+
+.auth-footer {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #dee2e6;
+}
+
+body.dark-mode .auth-footer {
+    background: linear-gradient(135deg, #2d2d2d, #1e1e1e);
+    border-top: 1px solid #444;
+}
+
+.social-login {
+    margin-top: 25px;
+    border-top: 1px solid #dee2e6;
+    padding-top: 25px;
+}
+
+body.dark-mode .social-login {
+    border-top: 1px solid #444;
+}
+
+.social-login-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 10px;
+}
+
+.social-login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode .social-login-btn {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.social-login-btn img {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+}
+
+/* Restaurant Cards */
+.restaurant-card {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    height: 100%;
+    border: none;
+}
+
+.restaurant-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode .restaurant-card {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .restaurant-card:hover {
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+}
+
+.restaurant-card .card-img-top {
+    height: 200px;
+    object-fit: cover;
+    transition: all 0.5s ease;
+}
+
+.restaurant-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.restaurant-card .rating {
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+    color: #212529;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+    display: inline-block;
+}
+
+.restaurant-card .location {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+body.dark-mode .restaurant-card .location {
+    color: #adb5bd;
+}
+
+.restaurant-card .price {
+    font-weight: bold;
+    color: #28a745;
+}
+
+body.dark-mode .restaurant-card .price {
+    color: #5cb85c;
+}
+
+.like-btn {
+    background: linear-gradient(135deg, #ff4d4d, #dc3545);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.like-btn:hover, .like-btn.active {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 6px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* Connection Cards */
+.connection-card {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.connection-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode .connection-card {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Group Cards */
+.group-card {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.group-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+body.dark-mode .group-card {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Messages */
+.messages-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    max-width: 70%;
+    margin-bottom: 12px;
+    padding: 12px 16px;
+    border-radius: 18px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.message.sent {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #dcf8c6, #c5e1a5);
+    border-bottom-right-radius: 4px;
+}
+
+.message.received {
+    align-self: flex-start;
+    background: linear-gradient(135deg, #f1f0f0, #e0e0e0);
+    border-bottom-left-radius: 4px;
+}
+
+body.dark-mode .message.sent {
+    background: linear-gradient(135deg, #1b5e20, #2e7d32);
+    color: #e0e0e0;
+}
+
+body.dark-mode .message.received {
+    background: linear-gradient(135deg, #424242, #323232);
+    color: #e0e0e0;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+    margin-top: 4px;
+}
+
+body.dark-mode .message-time {
+    color: #aaa;
+}
+
+/* Autocomplete */
+.autocomplete-container {
+    position: absolute;
+    z-index: 1000;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 250px;
+    overflow-y: auto;
+    border: none;
+}
+
+body.dark-mode .autocomplete-container {
+    background-color: #2d2d2d;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.autocomplete-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    transition: all 0.2s ease;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover {
+    background-color: #f0f0f0;
+}
+
+body.dark-mode .autocomplete-item {
+    border-bottom: 1px solid #444;
+}
+
+body.dark-mode .autocomplete-item:hover {
+    background-color: #3d3d3d;
+}
+
+/* Filter Section */
+.filter-section {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 25px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: none;
+}
+
+body.dark-mode .filter-section {
+    background: linear-gradient(135deg, #2d2d2d, #1e1e1e);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        padding: 20px;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #555;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+/* Profile Icon Animation */
+#profileDropdown i {
+    transition: all 0.3s ease;
+}
+
+#profileDropdown:hover i {
+    transform: scale(1.1);
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Navbar Brand Animation */
+.navbar-brand {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+    transform: scale(1.05);
+}
+
+/* Button Transitions */
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:active {
+    transform: scale(0.95);
+}

@@ -1,0 +1,68 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Create Group</h1>
+    <a href="{{ url_for('social.my_groups') }}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left me-2"></i> Back to Groups
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">New Dining Group</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('social.create_group') }}">
+                    <div class="mb-4">
+                        <label for="name" class="form-label">Group Name</label>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter a Group Name" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>Add Friends to Group</h6>
+                        <div class="list-group mb-3">
+                            {% for friend in current_user.friends %}
+                            <div class="list-group-item">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="{{ friend.id }}" id="friend-{{ friend.id }}" name="members[]">
+                                    <label class="form-check-label" for="friend-{{ friend.id }}">
+                                        {{ friend.username }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        Start Browsing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">About Groups</h5>
+            </div>
+            <div class="card-body">
+                <p>Create a dining group to:</p>
+                <ul>
+                    <li>Swipe on restaurants together</li>
+                    <li>Find matches based on everyone's preferences</li>
+                    <li>Plan meals with people who share your taste</li>
+                </ul>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i> After creating a group, you can share the group code with friends to let them join.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
