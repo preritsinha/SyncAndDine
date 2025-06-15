@@ -190,6 +190,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 <div align="center">
-  <p>Designed and developed with ❤️ by <a href="https://github.com/yourusername">Your Name</a></p>
-  <p>Connect with me on <a href="https://linkedin.com/in/yourprofile">LinkedIn</a></p>
+  <p>Designed and developed with ❤️ by <a href="https://github.com/preritsinha">Prerit Sinha</a></p>
+  <p>Connect with me on <a href="https://linkedin.com/in/preritsinha">LinkedIn</a></p>
 </div>
