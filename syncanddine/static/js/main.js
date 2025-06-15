@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
         container.style.position = 'absolute';
         container.style.zIndex = '1000';
         container.style.backgroundColor = '#fff';
-        container.style.width = input.offsetWidth + 'px';
+        container.style.width = Math.min(input.offsetWidth, window.innerWidth - 30) + 'px';
         container.style.border = '1px solid #ddd';
         container.style.maxHeight = '200px';
         container.style.overflowY = 'auto';

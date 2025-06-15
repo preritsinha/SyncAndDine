@@ -1,10 +1,11 @@
 /* General Styles */
 body {
-    min-height: 100vh;
+    min-height: 100vh; /* Fallback */
+    min-height: calc(var(--vh, 1vh) * 100); /* Mobile viewport height fix */
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
-    background-color: #f8f9fa;
+    background-color: #fff9e6; /* Light yellow background */
     color: #333;
 }
 
@@ -15,6 +16,7 @@ body {
 /* Light Mode Styles */
 .navbar {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background-color: #f8b951 !important; /* Matte orange navbar */
 }
 
 .card, .modal-content, .dropdown-menu {
@@ -23,20 +25,20 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    background: linear-gradient(135deg, #f8b951, #e67e22);
     border: none;
-    box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+    box-shadow: 0 2px 5px rgba(232, 126, 34, 0.3);
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #0a58ca, #084298);
+    background: linear-gradient(135deg, #e67e22, #d35400);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+    box-shadow: 0 4px 8px rgba(232, 126, 34, 0.4);
 }
 
 /* Dark Mode Styles */
 body.dark-mode {
-    background-color: #121212;
+    background-color: #2c2417;
     color: #e0e0e0;
 }
 
@@ -64,13 +66,13 @@ body.dark-mode .dropdown-item:hover {
 }
 
 body.dark-mode .btn-primary {
-    background: linear-gradient(135deg, #0d47a1, #1565c0);
-    box-shadow: 0 2px 5px rgba(21, 101, 192, 0.3);
+    background: linear-gradient(135deg, #e67e22, #d35400);
+    box-shadow: 0 2px 5px rgba(211, 84, 0, 0.3);
 }
 
 body.dark-mode .btn-primary:hover {
-    background: linear-gradient(135deg, #1565c0, #1976d2);
-    box-shadow: 0 4px 8px rgba(21, 101, 192, 0.4);
+    background: linear-gradient(135deg, #d35400, #a04000);
+    box-shadow: 0 4px 8px rgba(211, 84, 0, 0.4);
 }
 
 body.dark-mode .form-control {
@@ -156,10 +158,10 @@ body.dark-mode .auth-card {
 }
 
 .auth-header {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    background: linear-gradient(135deg, #fff9e6, #ffe0b2);
     padding: 25px;
     text-align: center;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid #f8b951;
 }
 
 body.dark-mode .auth-header {
@@ -172,10 +174,10 @@ body.dark-mode .auth-header {
 }
 
 .auth-footer {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    background: linear-gradient(135deg, #fff9e6, #ffe0b2);
     padding: 20px;
     text-align: center;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid #f8b951;
 }
 
 body.dark-mode .auth-footer {
@@ -233,6 +235,8 @@ body.dark-mode .social-login-btn {
     transition: all 0.3s ease;
     height: 100%;
     border: none;
+    display: flex;
+    flex-direction: column;
 }
 
 .restaurant-card:hover {
@@ -252,19 +256,37 @@ body.dark-mode .restaurant-card:hover {
     height: 200px;
     object-fit: cover;
     transition: all 0.5s ease;
+    width: 100%;
+}
+
+@media (max-width: 576px) {
+    .restaurant-card .card-img-top {
+        height: 160px;
+    }
 }
 
 .restaurant-card:hover .card-img-top {
     transform: scale(1.05);
 }
 
+.restaurant-card .card-body {
+    padding: 1rem;
+    flex: 1; /* Make card body take remaining space */
+    display: flex;
+    flex-direction: column;
+}
+
+.restaurant-card .card-body .mt-3 {
+    margin-top: auto !important; /* Push action buttons to bottom */
+}
+
 .restaurant-card .rating {
-    background: linear-gradient(135deg, #ffc107, #ff9800);
-    color: #212529;
+    background: linear-gradient(135deg, #f8b951, #e67e22);
+    color: #fff;
     padding: 6px 10px;
     border-radius: 6px;
     font-weight: bold;
-    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+    box-shadow: 0 2px 4px rgba(232, 126, 34, 0.3);
     display: inline-block;
 }
 
@@ -401,6 +423,8 @@ body.dark-mode .message-time {
     max-height: 250px;
     overflow-y: auto;
     border: none;
+    width: 100%; /* Ensure full width on mobile */
+    max-width: 100%; /* Prevent overflow */
 }
 
 body.dark-mode .autocomplete-container {
@@ -433,12 +457,13 @@ body.dark-mode .autocomplete-item:hover {
 
 /* Filter Section */
 .filter-section {
-    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    background: linear-gradient(135deg, #fff9e6, #ffe0b2);
     padding: 25px;
     border-radius: 16px;
     margin-bottom: 30px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(248, 185, 81, 0.15);
     border: none;
+    overflow-x: hidden; /* Prevent horizontal scroll on mobile */
 }
 
 body.dark-mode .filter-section {
@@ -449,6 +474,31 @@ body.dark-mode .filter-section {
 @media (max-width: 768px) {
     .filter-section {
         padding: 20px;
+    }
+    
+    .restaurant-card {
+        margin-bottom: 20px;
+    }
+    
+    .like-btn {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .auth-card {
+        margin: 0 15px;
+    }
+    
+    .navbar-brand {
+        font-size: 1.2rem;
+    }
+    
+    .footer {
+        padding: 15px 0;
+    }
+    
+    .btn {
+        padding: 0.375rem 0.75rem;
     }
 }
 
@@ -506,6 +556,91 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
     transform: scale(1.05);
 }
 
+/* Warm Food Theme Additions */
+.navbar-brand, .nav-link {
+    color: #fff !important;
+    font-weight: 500;
+}
+
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+.card {
+    border-color: #f8b951;
+    border-radius: 12px;
+}
+
+.card-header {
+    background-color: #f8b951;
+    color: #fff;
+}
+
+.footer {
+    background-color: #f8b951 !important;
+    color: #fff;
+}
+
+/* Food-themed focus styles */
+.form-control:focus {
+    border-color: #f8b951;
+    box-shadow: 0 0 0 0.25rem rgba(248, 185, 81, 0.25);
+}
+
+/* CSS variable for mobile viewport height fix */
+:root {
+    --vh: 1vh;
+}
+
+/* Additional responsive fixes */
+@media (max-width: 576px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        font-size: 0.9rem;
+    }
+    
+    .restaurant-card .rating {
+        padding: 4px 8px;
+        font-size: 0.9rem;
+    }
+    
+    .message {
+        max-width: 85%;
+    }
+    
+    /* Fix for filter toggle button */
+    .filter-toggle {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    /* Improve form elements spacing */
+    .form-label {
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Better spacing for mobile */
+    .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+}
+
 /* Button Transitions */
 .btn {
     transition: all 0.3s ease;
@@ -513,4 +648,17 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 
 .btn:active {
     transform: scale(0.95);
+}
+
+/* Responsive Grid Fixes */
+@media (max-width: 768px) {
+    .row {
+        margin-left: -10px;
+        margin-right: -10px;
+    }
+    
+    .col-md-6, .col-lg-4, .col-md-4, .col-12 {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
 }

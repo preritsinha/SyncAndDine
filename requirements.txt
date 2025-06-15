@@ -8,3 +8,5 @@ Werkzeug
 email-validator
 python-dotenv
 pandas
+WTForms
+gunicorn

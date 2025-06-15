@@ -120,7 +120,7 @@
 <div class="row">
     {% if restaurants %}
         {% for restaurant in restaurants %}
-            <div class="col-md-6 col-lg-4 mb-4">
+            <div class="col-sm-12 col-md-6 col-lg-4 mb-4">
                 <div class="restaurant-card">
                     <img src="{{ restaurant.image_url or url_for('static', filename='img/default-restaurant.jpg') }}" class="card-img-top" alt="{{ restaurant.name }}">
                     <div class="card-body">
