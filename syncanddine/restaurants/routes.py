@@ -55,8 +55,10 @@ def list_restaurants():
     all_cuisines = db.session.query(Restaurant.cuisine_type).distinct().all()
     cuisines = [cuisine[0] for cuisine in all_cuisines if cuisine[0]]
     
-    # Get user's groups for the group filter
-    user_groups = current_user.owned_groups + list(current_user.groups)
+    # Get user's groups for the group filter (avoid duplicates)
+    owned_group_ids = [g.id for g in current_user.owned_groups]
+    member_groups = [g for g in current_user.groups if g.id not in owned_group_ids]
+    user_groups = current_user.owned_groups + member_groups
     
     return render_template('restaurants/list.html', 
                           title='Restaurants', 
@@ -127,8 +129,10 @@ def swipe_restaurants():
     all_cuisines = db.session.query(Restaurant.cuisine_type).distinct().all()
     cuisines = [cuisine[0] for cuisine in all_cuisines if cuisine[0]]
     
-    # Get user's groups for the group filter
-    user_groups = current_user.owned_groups + list(current_user.groups)
+    # Get user's groups for the group filter (avoid duplicates)
+    owned_group_ids = [g.id for g in current_user.owned_groups]
+    member_groups = [g for g in current_user.groups if g.id not in owned_group_ids]
+    user_groups = current_user.owned_groups + member_groups
     
     return render_template('restaurants/swipe.html', 
                           title='Swipe Restaurants', 

@@ -55,14 +55,14 @@
                                             </small>
                                         </div>
                                     </div>
-                                    <div class="d-flex">
+                                    <div class="d-flex flex-wrap">
                                         {% if current_user.id == group.owner_id %}
-                                            <form action="{{ url_for('social.toggle_admin', group_id=group.id, user_id=member.id) }}" method="POST" class="me-2">
+                                            <form action="{{ url_for('social.toggle_admin', group_id=group.id, user_id=member.id) }}" method="POST" class="me-2 mb-2">
                                                 <button type="submit" class="btn btn-sm {% if member.id in admin_ids %}btn-outline-secondary{% else %}btn-outline-primary{% endif %}">
                                                     {% if member.id in admin_ids %}
-                                                        <i class="fas fa-user-shield"></i> Remove Admin
+                                                        <i class="fas fa-user-shield"></i> <span class="d-none d-md-inline">Remove Admin</span>
                                                     {% else %}
-                                                        <i class="fas fa-user-shield"></i> Make Admin
+                                                        <i class="fas fa-user-shield"></i> <span class="d-none d-md-inline">Make Admin</span>
                                                     {% endif %}
                                                 </button>
                                             </form>
@@ -71,7 +71,7 @@
                                         {% if is_admin %}
                                             <form action="{{ url_for('social.remove_group_member', group_id=group.id, user_id=member.id) }}" method="POST">
                                                 <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                    <i class="fas fa-user-minus"></i> Remove
+                                                    <i class="fas fa-user-minus"></i> <span class="d-none d-md-inline">Remove</span>
                                                 </button>
                                             </form>
                                         {% endif %}
@@ -82,7 +82,7 @@
                     {% endfor %}
                 </div>
                 
-                {% if current_user == group.owner and current_user.friends %}
+                {% if is_admin and current_user.friends %}
                     <div class="mt-4">
                         <h6>Add Members</h6>
                         <form action="{{ url_for('social.add_group_member', group_id=group.id) }}" method="POST" class="mt-3">

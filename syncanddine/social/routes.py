@@ -96,6 +96,14 @@ def create_group():
         group = Group(name=name, owner_id=current_user.id, share_code=share_code)
         group.members.append(current_user)
         
+        # Add selected members to the group
+        member_ids = request.form.getlist('members[]')
+        if member_ids:
+            for member_id in member_ids:
+                user = User.query.get(int(member_id))
+                if user and user != current_user:
+                    group.members.append(user)
+        
         # Set the owner as admin in the association table
         stmt = group_members.update().where(
             (group_members.c.user_id == current_user.id) & 
@@ -233,7 +241,22 @@ def toggle_admin(group_id, user_id):
         is_admin=True
     ).first() is not None
     
-    # Toggle admin status
+    # If making user an admin, first remove admin status from all other members
+    # including the current owner (issue #4)
+    if not is_admin:
+        # Remove admin status from all members except the target user
+        remove_stmt = group_members.update().where(
+            (group_members.c.group_id == group.id) &
+            (group_members.c.user_id != user.id)
+        ).values(is_admin=False)
+        
+        db.session.execute(remove_stmt)
+        
+        # Transfer ownership to the new admin
+        group.owner_id = user.id
+        db.session.add(group)
+    
+    # Toggle admin status for the target user
     stmt = group_members.update().where(
         (group_members.c.user_id == user.id) & 
         (group_members.c.group_id == group.id)
@@ -245,7 +268,7 @@ def toggle_admin(group_id, user_id):
     if is_admin:
         flash(f'{user.username} is no longer an admin.', 'info')
     else:
-        flash(f'{user.username} is now an admin.', 'success')
+        flash(f'{user.username} is now the admin and owner of the group.', 'success')
     
     return redirect(url_for('social.group_detail', group_id=group.id))
 @social.route('/messages/<int:friend_id>', methods=['GET', 'POST'])

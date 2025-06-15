@@ -48,7 +48,7 @@
 </div>
 
 <!-- Filter Section -->
-<div class="filter-section d-none d-md-block mb-4">
+<div class="filter-section d-none d-md-block mb-4 {% if request.args.get('group_id') and not is_admin %}disabled-section{% endif %}">
     <form method="GET" action="{{ url_for('restaurants.list_restaurants') }}">
         {% if request.args.get('group_id') %}
         <input type="hidden" name="group_id" value="{{ request.args.get('group_id') }}">
@@ -194,6 +194,21 @@
                     filterToggle.innerHTML = '<i class="fas fa-filter me-2"></i> View Filters';
                 } else {
                     filterToggle.innerHTML = '<i class="fas fa-times me-2"></i> Close Filters';
+                }
+            });
+        }
+        
+        // Apply visual styling to disabled form elements for non-admin users
+        const isAdminElement = document.querySelector('.filter-section.disabled-section');
+        if (isAdminElement) {
+            const formElements = isAdminElement.querySelectorAll('select, input, button, a.btn');
+            formElements.forEach(element => {
+                if (element.disabled) {
+                    element.classList.add('text-muted');
+                    if (element.tagName === 'A') {
+                        element.style.pointerEvents = 'none';
+                        element.style.opacity = '0.65';
+                    }
                 }
             });
         }
