@@ -1,61 +1,92 @@
+"""
+Restaurant Routes Module
+
+This module handles all restaurant-related functionality including:
+- Dynamic restaurant listing from Google Places API
+- Restaurant filtering and search
+- User preferences (likes/dislikes)
+- Restaurant details and swiping interface
+
+Author: SyncAndDine Team
+Version: 2.0 - Dynamic API Integration
+"""
+
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
 from syncanddine import db
-from syncanddine.models.restaurant import Restaurant, RestaurantLike
+from syncanddine.models.restaurant import RestaurantLike
 from syncanddine.models.user import Group
+from syncanddine.restaurants.places_service import GooglePlacesService
 
+# Create restaurants blueprint for modular route organization
 restaurants = Blueprint('restaurants', __name__)
 
 @restaurants.route('/restaurants')
 @login_required
 def list_restaurants():
-    # Get filter parameters
-    location = request.args.get('location', '')
+    """
+    Display restaurants dynamically from Google Places API
+    
+    Features:
+    - Live restaurant data based on user location
+    - Real-time filtering by rating, cuisine, and price
+    - Group-based restaurant viewing
+    - Admin controls for group filters
+    
+    Returns:
+        Rendered restaurant list template with live API data
+    """
+    # Extract filter parameters from URL query string
+    city = request.args.get('city', '')
+    area = request.args.get('area', '')
+    lat = request.args.get('lat', type=float)
+    lon = request.args.get('lon', type=float)
+    
+    # Combine city and area for search
+    location_query = f"{area}, {city}" if area and city else city
     min_rating = request.args.get('min_rating', 0, type=float)
     cuisine = request.args.get('cuisine', '')
-    veg_only = request.args.get('veg_only', False, type=bool)
     price_range = request.args.get('price_range', '')
     group_id = request.args.get('group_id', 0, type=int)
     
+    # Get user's location or use a fallback
+    if not city and not (lat and lon):
+        # Try to get user's country/region for better defaults
+        import os
+        default_city = os.getenv('DEFAULT_CITY', 'Mumbai, India')
+        default_coords = os.getenv('DEFAULT_COORDS', '19.0760,72.8777').split(',')
+        lat, lon = float(default_coords[0]), float(default_coords[1])
+    
     # Check if user is admin if group_id is provided
-    is_admin = True  # Default for personal filters
+    is_admin = True
     group = None
     
     if group_id > 0:
         group = Group.query.get_or_404(group_id)
-        # Check if user is in the group
         if current_user not in group.members and current_user != group.owner:
             flash('You are not a member of this group.', 'danger')
             return redirect(url_for('social.my_groups'))
-        
-        # Check if user is admin
         is_admin = group.is_admin(current_user)
     
-    # Build query
-    query = Restaurant.query
+    # Get live restaurants from Google Places API
+    places_service = GooglePlacesService()
+    if location_query:
+        restaurants = places_service.search_restaurants(city=location_query)
+    else:
+        restaurants = places_service.search_restaurants(lat, lon)
     
-    if location:
-        query = query.filter(Restaurant.location.ilike(f'%{location}%'))
+    # Apply filters
     if min_rating > 0:
-        query = query.filter(Restaurant.rating >= min_rating)
+        restaurants = [r for r in restaurants if r['rating'] >= min_rating]
     if cuisine:
-        query = query.filter(Restaurant.cuisine_type == cuisine)
-    if veg_only:
-        query = query.filter(Restaurant.is_vegetarian == True)
+        restaurants = [r for r in restaurants if cuisine.lower() in r['cuisine_type'].lower()]
     if price_range:
-        query = query.filter(Restaurant.price_range == price_range)
+        restaurants = [r for r in restaurants if r['price_range'] == price_range]
     
-    # Get all restaurants
-    restaurants = query.all()
+    # Get unique cuisines for filter dropdown
+    cuisines = list(set([r['cuisine_type'] for r in restaurants if r['cuisine_type']]))
     
-    # Get unique locations and cuisines for filter dropdowns
-    all_locations = db.session.query(Restaurant.location).distinct().all()
-    locations = [loc[0] for loc in all_locations if loc[0]]
-    
-    all_cuisines = db.session.query(Restaurant.cuisine_type).distinct().all()
-    cuisines = [cuisine[0] for cuisine in all_cuisines if cuisine[0]]
-    
-    # Get user's groups for the group filter (avoid duplicates)
+    # Get user's groups
     owned_group_ids = [g.id for g in current_user.owned_groups]
     member_groups = [g for g in current_user.groups if g.id not in owned_group_ids]
     user_groups = current_user.owned_groups + member_groups
@@ -65,7 +96,6 @@ def list_restaurants():
                           restaurants=restaurants,
                           group=group,
                           is_admin=is_admin,
-                          locations=locations,
                           cuisines=cuisines,
                           user_groups=user_groups)
 
@@ -108,26 +138,23 @@ def swipe_restaurants():
     if price_range:
         query = query.filter(Restaurant.price_range == price_range)
     
-    # Get restaurants that the user hasn't swiped on yet in this group
-    swiped_restaurant_ids = db.session.query(RestaurantLike.restaurant_id).filter_by(
-        user_id=current_user.id,
-        group_id=group_id if group_id else None
-    ).all()
+    # Get live restaurants from Google Places API
+    places_service = GooglePlacesService()
+    all_restaurants = places_service.search_restaurants(lat, lon)
     
-    swiped_restaurant_ids = [r[0] for r in swiped_restaurant_ids]
+    # Apply filters
+    if min_rating > 0:
+        all_restaurants = [r for r in all_restaurants if r['rating'] >= min_rating]
+    if cuisine:
+        all_restaurants = [r for r in all_restaurants if cuisine.lower() in r['cuisine_type'].lower()]
+    if price_range:
+        all_restaurants = [r for r in all_restaurants if r['price_range'] == price_range]
     
-    if swiped_restaurant_ids:
-        query = query.filter(~Restaurant.id.in_(swiped_restaurant_ids))
+    # Get the first restaurant for swiping
+    restaurant = all_restaurants[0] if all_restaurants else None
     
-    # Get the first restaurant
-    restaurant = query.first()
-    
-    # Get all locations and cuisines for filter dropdowns
-    all_locations = db.session.query(Restaurant.location).distinct().all()
-    locations = [loc[0] for loc in all_locations if loc[0]]
-    
-    all_cuisines = db.session.query(Restaurant.cuisine_type).distinct().all()
-    cuisines = [cuisine[0] for cuisine in all_cuisines if cuisine[0]]
+    # Get unique cuisines for filter dropdown
+    cuisines = list(set([r['cuisine_type'] for r in all_restaurants if r['cuisine_type']]))
     
     # Get user's groups for the group filter (avoid duplicates)
     owned_group_ids = [g.id for g in current_user.owned_groups]
@@ -140,27 +167,29 @@ def swipe_restaurants():
                           group=group,
                           group_id=group_id,
                           is_admin=is_admin,
-                          locations=locations,
                           cuisines=cuisines,
                           user_groups=user_groups)
 
-@restaurants.route('/restaurants/<int:restaurant_id>')
+@restaurants.route('/restaurants/<restaurant_id>')
 @login_required
 def restaurant_detail(restaurant_id):
-    restaurant = Restaurant.query.get_or_404(restaurant_id)
+    # Get restaurant details from Google Places API
+    places_service = GooglePlacesService()
+    restaurant = places_service.get_restaurant_details(restaurant_id)
+    if not restaurant:
+        flash('Restaurant not found', 'danger')
+        return redirect(url_for('restaurants.list_restaurants'))
     return render_template('restaurants/detail.html', 
-                          title=restaurant.name, 
+                          title=restaurant['name'], 
                           restaurant=restaurant)
 
-@restaurants.route('/restaurants/like/<int:restaurant_id>/<int:group_id>', methods=['POST'])
+@restaurants.route('/restaurants/like/<restaurant_id>/<int:group_id>', methods=['POST'])
 @login_required
 def like_restaurant(restaurant_id, group_id):
-    restaurant = Restaurant.query.get_or_404(restaurant_id)
     group = None
     
     if group_id > 0:
         group = Group.query.get_or_404(group_id)
-        # Check if user is in the group
         if current_user not in group.members and current_user != group.owner:
             flash('You are not a member of this group.', 'danger')
             return redirect(url_for('restaurants.list_restaurants'))
@@ -168,7 +197,7 @@ def like_restaurant(restaurant_id, group_id):
     # Check if user already liked/disliked this restaurant in this group
     existing_like = RestaurantLike.query.filter_by(
         user_id=current_user.id,
-        restaurant_id=restaurant.id,
+        restaurant_google_id=restaurant_id,
         group_id=group_id if group else None
     ).first()
     
@@ -177,7 +206,7 @@ def like_restaurant(restaurant_id, group_id):
     else:
         like = RestaurantLike(
             user_id=current_user.id,
-            restaurant_id=restaurant.id,
+            restaurant_google_id=restaurant_id,
             group_id=group_id if group else None,
             liked=True
         )
@@ -188,31 +217,23 @@ def like_restaurant(restaurant_id, group_id):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'status': 'success'})
     
-    flash(f'You liked {restaurant.name}!', 'success')
-    
-    # If coming from swipe view, redirect back to swipe with same parameters
-    if request.referrer and 'swipe' in request.referrer:
-        return redirect(url_for('restaurants.swipe_restaurants', group_id=group_id))
-    
+    flash('Restaurant liked!', 'success')
     return redirect(url_for('restaurants.list_restaurants'))
 
-@restaurants.route('/restaurants/dislike/<int:restaurant_id>/<int:group_id>', methods=['POST'])
+@restaurants.route('/restaurants/dislike/<restaurant_id>/<int:group_id>', methods=['POST'])
 @login_required
 def dislike_restaurant(restaurant_id, group_id):
-    restaurant = Restaurant.query.get_or_404(restaurant_id)
     group = None
     
     if group_id > 0:
         group = Group.query.get_or_404(group_id)
-        # Check if user is in the group
         if current_user not in group.members and current_user != group.owner:
             flash('You are not a member of this group.', 'danger')
             return redirect(url_for('restaurants.list_restaurants'))
     
-    # Check if user already liked/disliked this restaurant in this group
     existing_like = RestaurantLike.query.filter_by(
         user_id=current_user.id,
-        restaurant_id=restaurant.id,
+        restaurant_google_id=restaurant_id,
         group_id=group_id if group else None
     ).first()
     
@@ -221,7 +242,7 @@ def dislike_restaurant(restaurant_id, group_id):
     else:
         like = RestaurantLike(
             user_id=current_user.id,
-            restaurant_id=restaurant.id,
+            restaurant_google_id=restaurant_id,
             group_id=group_id if group else None,
             liked=False
         )
@@ -232,12 +253,7 @@ def dislike_restaurant(restaurant_id, group_id):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'status': 'success'})
     
-    flash(f'You disliked {restaurant.name}.', 'info')
-    
-    # If coming from swipe view, redirect back to swipe with same parameters
-    if request.referrer and 'swipe' in request.referrer:
-        return redirect(url_for('restaurants.swipe_restaurants', group_id=group_id))
-    
+    flash('Restaurant disliked.', 'info')
     return redirect(url_for('restaurants.list_restaurants'))
 
 @restaurants.route('/restaurants/matches/<int:group_id>')
@@ -286,3 +302,4 @@ def group_matches(group_id):
                           title='Group Matches',
                           group=group,
                           matches=matched_restaurants)
+

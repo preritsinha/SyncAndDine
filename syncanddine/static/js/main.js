@@ -5,30 +5,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl)
     });
     
-    // Dark mode toggle
-    const toggleTheme = document.getElementById('toggleTheme');
-    if (toggleTheme) {
-        // Check for saved theme preference or default to light
-        const currentTheme = localStorage.getItem('theme') || 'light';
+    // Remove old dark mode toggle - now handled by theme-toggle.js
+    // Force navbar color fix
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    
+    // Force navbar background color
+    const navbar = document.getElementById('mainNavbar');
+    if (navbar) {
         if (currentTheme === 'dark') {
-            document.body.classList.add('dark-mode');
-            toggleTheme.innerHTML = 'Light Mode <i class="fas fa-sun ms-2"></i>';
+            navbar.style.backgroundColor = '#1c1c1e';
+        } else {
+            navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
         }
-        
-        // Toggle theme on click
-        toggleTheme.addEventListener('click', function(e) {
-            e.preventDefault();
-            document.body.classList.toggle('dark-mode');
-            
-            // Update localStorage and button text
-            if (document.body.classList.contains('dark-mode')) {
-                localStorage.setItem('theme', 'dark');
-                this.innerHTML = 'Light Mode <i class="fas fa-sun ms-2"></i>';
-            } else {
-                localStorage.setItem('theme', 'light');
-                this.innerHTML = 'Dark Mode <i class="fas fa-moon ms-2"></i>';
-            }
-        });
     }
     
     // Location autocomplete

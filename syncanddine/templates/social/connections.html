@@ -128,17 +128,17 @@
 
 <!-- Find Friends Modal -->
 <div class="modal fade" id="findFriendsModal" tabindex="-1" aria-labelledby="findFriendsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-effect">
+            <div class="modal-header border-0">
                 <h5 class="modal-title" id="findFriendsModalLabel">Find Friends</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="{{ url_for('social.search_connections') }}" method="POST">
+                <form action="{{ url_for('social.search_connections') }}" method="POST" id="searchForm">
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username to search" required>
                     </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Search Users</button>
@@ -148,4 +148,18 @@
         </div>
     </div>
 </div>
+
+<style>
+.modal-backdrop {
+    display: none !important;
+}
+.modal {
+    z-index: 1050 !important;
+    background: rgba(0, 0, 0, 0.5);
+}
+.modal-content {
+    z-index: 1060 !important;
+    position: relative;
+}
+</style>
 {% endblock %}

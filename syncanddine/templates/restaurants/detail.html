@@ -3,109 +3,99 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <img src="{{ restaurant.image_url or url_for('static', filename='img/default-restaurant.jpg') }}" class="card-img-top" alt="{{ restaurant.name }}" style="height: 300px; object-fit: cover;">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h1 class="card-title">{{ restaurant.name }}</h1>
-                        <span class="badge bg-warning text-dark fs-5">
-                            <i class="fas fa-star me-1"></i> {{ restaurant.rating }}
-                        </span>
+        <div class="col-md-8 mx-auto">
+            <div class="restaurant-card glass-effect">
+                {% if restaurant.photos and restaurant.photos|length > 1 %}
+                <div id="restaurantCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        {% for photo in restaurant.photos %}
+                        <button type="button" data-bs-target="#restaurantCarousel" data-bs-slide-to="{{ loop.index0 }}" 
+                                {% if loop.first %}class="active"{% endif %}></button>
+                        {% endfor %}
                     </div>
-                    
-                    <div class="mb-3">
-                        <p class="card-text fs-5">
-                            <i class="fas fa-map-marker-alt me-2"></i> {{ restaurant.location }}
-                            {% if restaurant.distance %}
-                                <span class="ms-2">({{ restaurant.distance }} km)</span>
-                            {% endif %}
-                        </p>
+                    <div class="carousel-inner">
+                        {% for photo in restaurant.photos %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ photo }}" class="d-block w-100" alt="{{ restaurant.name }}" style="height: 300px; object-fit: cover;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#restaurantCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#restaurantCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                </div>
+                {% else %}
+                <img src="{{ restaurant.image_url or 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop' }}" 
+                     class="card-img-top" 
+                     alt="{{ restaurant.name }}"
+                     style="height: 300px; object-fit: cover;">
+                {% endif %}
+                
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h1 class="card-title">{{ restaurant.name }}</h1>
+                        <div class="rating-badge">
+                            <div class="stars">
+                                {% set rating = restaurant.rating or 0 %}
+                                {% for i in range(5) %}
+                                    {% if i < rating|int %}
+                                        <span class="star filled">★</span>
+                                    {% elif i < rating %}
+                                        <span class="star half">★</span>
+                                    {% else %}
+                                        <span class="star empty">☆</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="rating-number">{{ "%.1f"|format(rating) }}</span>
+                        </div>
                     </div>
                     
                     <div class="row mb-4">
-                        <div class="col-md-4">
-                            <p class="mb-1"><strong>Cuisine:</strong></p>
-                            <p>{{ restaurant.cuisine_type or 'Not specified' }}</p>
+                        <div class="col-md-6">
+                            <p class="location mb-2">
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                <strong>Address:</strong><br>
+                                {{ restaurant.location }}
+                            </p>
                         </div>
-                        <div class="col-md-4">
-                            <p class="mb-1"><strong>Price Range:</strong></p>
-                            <p class="price-range">{{ restaurant.price_range or 'Not specified' }}</p>
-                        </div>
-                        <div class="col-md-4">
-                            <p class="mb-1"><strong>Type:</strong></p>
-                            <p>{% if restaurant.is_vegetarian %}100% Vegetarian{% else %}Non-vegetarian{% endif %}</p>
+                        <div class="col-md-6">
+                            <p class="price mb-2">
+                                <i class="fas fa-dollar-sign me-2"></i>
+                                <strong>Price Range:</strong> {{ restaurant.price_range or '$$' }}
+                            </p>
                         </div>
                     </div>
                     
-                    <div class="d-flex justify-content-center gap-3 mt-4">
-                        <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.id, group_id=0) }}" method="POST">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="fas fa-thumbs-up me-2"></i> Like
-                            </button>
-                        </form>
-                        <form action="{{ url_for('restaurants.dislike_restaurant', restaurant_id=restaurant.id, group_id=0) }}" method="POST">
-                            <button type="submit" class="btn btn-danger btn-lg">
-                                <i class="fas fa-thumbs-down me-2"></i> Dislike
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Like with a Group</h5>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">Select a group to like this restaurant with:</p>
-                    
-                    <form id="group-like-form" method="POST">
-                        <div class="mb-3">
-                            <select class="form-select" id="group-select">
-                                <option value="" selected disabled>Select a group</option>
-                                {% for group in current_user.owned_groups %}
-                                    <option value="{{ group.id }}">{{ group.name }} (Owner)</option>
-                                {% endfor %}
-                                {% for group in current_user.groups %}
-                                    {% if group.owner != current_user %}
-                                        <option value="{{ group.id }}">{{ group.name }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="button" id="group-like-btn" class="btn btn-success">
-                                <i class="fas fa-thumbs-up me-2"></i> Like with Group
-                            </button>
-                            <button type="button" id="group-dislike-btn" class="btn btn-danger">
-                                <i class="fas fa-thumbs-down me-2"></i> Dislike with Group
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Restaurant Info</h5>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">
-                        <i class="fas fa-clock me-2"></i> Added on {{ restaurant.created_at.strftime('%Y-%m-%d') }}
+                    {% if restaurant.phone %}
+                    <p class="mb-2">
+                        <i class="fas fa-phone me-2"></i>
+                        <strong>Phone:</strong> {{ restaurant.phone }}
                     </p>
+                    {% endif %}
                     
-                    <!-- Map placeholder -->
-                    <div class="bg-light text-center p-4 mb-3" style="border-radius: 5px;">
-                        <i class="fas fa-map-marked-alt fa-3x text-muted"></i>
-                        <p class="mt-2 mb-0">Map view would be displayed here</p>
-                    </div>
+                    {% if restaurant.website %}
+                    <p class="mb-4">
+                        <i class="fas fa-globe me-2"></i>
+                        <strong>Website:</strong> 
+                        <a href="{{ restaurant.website }}" target="_blank" class="text-decoration-none">
+                            Visit Website <i class="fas fa-external-link-alt ms-1"></i>
+                        </a>
+                    </p>
+                    {% endif %}
                     
-                    <div class="d-grid">
-                        <a href="#" class="btn btn-outline-primary">
-                            <i class="fas fa-directions me-2"></i> Get Directions
+                    <div class="d-flex gap-3 mt-4">
+                        <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.google_place_id, group_id=0) }}" method="POST" class="flex-fill">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-heart me-2"></i>Like This Place
+                            </button>
+                        </form>
+                        
+                        <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-outline-primary flex-fill">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Restaurants
                         </a>
                     </div>
                 </div>
@@ -113,32 +103,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const groupLikeBtn = document.getElementById('group-like-btn');
-        const groupDislikeBtn = document.getElementById('group-dislike-btn');
-        const groupSelect = document.getElementById('group-select');
-        
-        groupLikeBtn.addEventListener('click', function() {
-            const groupId = groupSelect.value;
-            if (groupId) {
-                window.location.href = `/restaurants/like/{{ restaurant.id }}/${groupId}`;
-            } else {
-                alert('Please select a group first');
-            }
-        });
-        
-        groupDislikeBtn.addEventListener('click', function() {
-            const groupId = groupSelect.value;
-            if (groupId) {
-                window.location.href = `/restaurants/dislike/{{ restaurant.id }}/${groupId}`;
-            } else {
-                alert('Please select a group first');
-            }
-        });
-    });
-</script>
 {% endblock %}

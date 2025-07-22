@@ -4,6 +4,10 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Restaurants</h1>
     <div>
+        <button id="getLocationBtn" class="btn btn-outline-success me-2" style="display: none;">
+            <i class="fas fa-map-marker-alt me-2"></i> Enable Location
+        </button>
+        
         <button class="btn btn-primary d-md-none filter-toggle">
             <i class="fas fa-filter me-2"></i> View Filters
         </button>
@@ -16,17 +20,10 @@
     </div>
 </div>
 
-<!-- Selected Diners Counter -->
-{% if request.args.get('group_id') %}
-<div class="selected-diners mb-4">
-    Selected Diners ({{ group.members.count() if group else '0' }})
-</div>
-{% endif %}
-
 <!-- Group Selection -->
 <div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-6 col-md-8 col-12">
+        <div class="card glass-effect">
             <div class="card-header">
                 <h5 class="mb-0">Filter for Group</h5>
             </div>
@@ -48,69 +45,57 @@
 </div>
 
 <!-- Filter Section -->
-<div class="filter-section d-none d-md-block mb-4 {% if request.args.get('group_id') and not is_admin %}disabled-section{% endif %}">
+<div class="filter-section glass-effect d-none d-md-block mb-4">
     <form method="GET" action="{{ url_for('restaurants.list_restaurants') }}">
         {% if request.args.get('group_id') %}
         <input type="hidden" name="group_id" value="{{ request.args.get('group_id') }}">
         {% endif %}
         <div class="row">
             <div class="col-12 mb-3">
-                <h5>Fill in the details to start filtering restaurants.</h5>
-                {% if request.args.get('group_id') and not is_admin %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i> Only group admins can modify filters for this group.
-                </div>
-                {% endif %}
+                <h5>Find restaurants near you</h5>
             </div>
-            <div class="col-md-4 mb-3">
-                <label for="location" class="form-label">Location</label>
-                <select class="form-select" id="location" name="location" {% if request.args.get('group_id') and not is_admin %}disabled{% endif %}>
-                    <option value="">Any</option>
-                    {% for loc in locations %}
-                        <option value="{{ loc }}" {% if request.args.get('location') == loc %}selected{% endif %}>{{ loc }}</option>
-                    {% endfor %}
+            <div class="col-lg-3 col-md-6 col-12 mb-3">
+                <label for="city" class="form-label">City</label>
+                <select class="form-select searchable-select" id="city" name="city">
+                    <option value="">Current Location</option>
                 </select>
+                <small class="text-muted d-block" style="height: 1.2em;">Search and select city</small>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-lg-3 col-md-6 col-12 mb-3">
+                <label for="area" class="form-label">Area</label>
+                <select class="form-select searchable-select" id="area" name="area" disabled>
+                    <option value="">Select city first</option>
+                </select>
+                <small class="text-muted d-block" style="height: 1.2em;">Search and select area</small>
+            </div>
+            <input type="hidden" name="lat" value="{{ request.args.get('lat', '') }}">
+            <input type="hidden" name="lon" value="{{ request.args.get('lon', '') }}">
+            <div class="col-lg-4 col-md-6 col-12 mb-3">
                 <label for="min_rating" class="form-label">Rating</label>
-                <select class="form-select" id="min_rating" name="min_rating" {% if request.args.get('group_id') and not is_admin %}disabled{% endif %}>
+                <select class="form-select" id="min_rating" name="min_rating">
                     <option value="0" {% if request.args.get('min_rating', '0') == '0' %}selected{% endif %}>Any</option>
                     <option value="3" {% if request.args.get('min_rating') == '3' %}selected{% endif %}>3+</option>
                     <option value="4" {% if request.args.get('min_rating') == '4' %}selected{% endif %}>4+</option>
                     <option value="4.5" {% if request.args.get('min_rating') == '4.5' %}selected{% endif %}>4.5+</option>
                 </select>
+                <small class="text-muted d-block" style="height: 1.2em;">&nbsp;</small>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-lg-4 col-md-6 col-12 mb-3">
                 <label for="cuisine" class="form-label">Cuisines</label>
-                <select class="form-select" id="cuisine" name="cuisine" {% if request.args.get('group_id') and not is_admin %}disabled{% endif %}>
+                <select class="form-select" id="cuisine" name="cuisine">
                     <option value="">Any</option>
                     {% for cuisine_type in cuisines %}
                         <option value="{{ cuisine_type }}" {% if request.args.get('cuisine') == cuisine_type %}selected{% endif %}>{{ cuisine_type }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4 mb-3">
-                <label for="restaurant_type" class="form-label">Restaurant Type</label>
-                <select class="form-select" id="restaurant_type" name="veg_only" {% if request.args.get('group_id') and not is_admin %}disabled{% endif %}>
-                    <option value="false" {% if request.args.get('veg_only') != 'true' %}selected{% endif %}>Any</option>
-                    <option value="true" {% if request.args.get('veg_only') == 'true' %}selected{% endif %}>Vegetarian Only</option>
-                </select>
-            </div>
-            <div class="col-md-4 mb-3">
-                <label for="price_range" class="form-label">Approx Cost</label>
-                <select class="form-select" id="price_range" name="price_range" {% if request.args.get('group_id') and not is_admin %}disabled{% endif %}>
-                    <option value="">Any</option>
-                    <option value="$" {% if request.args.get('price_range') == '$' %}selected{% endif %}>$</option>
-                    <option value="$$" {% if request.args.get('price_range') == '$$' %}selected{% endif %}>$$</option>
-                    <option value="$$$" {% if request.args.get('price_range') == '$$$' %}selected{% endif %}>$$$</option>
-                    <option value="$$$$" {% if request.args.get('price_range') == '$$$$' %}selected{% endif %}>$$$$</option>
-                </select>
-            </div>
         </div>
-        <div class="row mt-3">
+        <div class="row mt-2">
             <div class="col-12">
-                <button type="submit" class="btn btn-primary" {% if request.args.get('group_id') and not is_admin %}disabled{% endif %}>Apply</button>
-                <a href="{{ url_for('restaurants.list_restaurants', group_id=request.args.get('group_id', '')) }}" class="btn btn-outline-secondary ms-2" {% if request.args.get('group_id') and not is_admin %}disabled{% endif %}>Reset All</a>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-outline-secondary">Reset All</a>
+                </div>
             </div>
         </div>
     </form>
@@ -120,40 +105,44 @@
 <div class="row">
     {% if restaurants %}
         {% for restaurant in restaurants %}
-            <div class="col-sm-12 col-md-6 col-lg-4 mb-4">
+            <div class="col-6 col-md-6 col-lg-4 mb-3">
                 <div class="restaurant-card">
-                    <img src="{{ restaurant.image_url or url_for('static', filename='img/default-restaurant.jpg') }}" class="card-img-top" alt="{{ restaurant.name }}">
+                    <img src="{{ restaurant.image_url or 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop' }}" 
+                         class="card-img-top" 
+                         alt="{{ restaurant.name }}" 
+                         onerror="this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop'">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="rating">
-                                {{ restaurant.rating }}
-                            </span>
+                            <div class="rating-badge">
+                                <div class="stars">
+                                    {% set rating = restaurant.rating or 0 %}
+                                    {% for i in range(5) %}
+                                        {% if i < rating|int %}
+                                            <span class="star filled">★</span>
+                                        {% elif i < rating %}
+                                            <span class="star half">★</span>
+                                        {% else %}
+                                            <span class="star empty">☆</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="rating-number">{{ "%.1f"|format(rating) }}</span>
+                            </div>
                             {% if restaurant.is_vegetarian %}
-                                <span class="badge bg-success">100% Pure Veg Only</span>
+                                <span class="badge bg-success">Vegetarian</span>
                             {% endif %}
                         </div>
                         <h5 class="card-title">{{ restaurant.name }}</h5>
                         <p class="location">
-                            {{ restaurant.location }}
-                            {% if restaurant.distance %}
-                                <span class="ms-2">{{ restaurant.distance }} kms</span>
-                            {% endif %}
+                            <i class="fas fa-map-marker-alt me-1"></i>{{ restaurant.location }}
                         </p>
                         <p class="price">
-                            {% if restaurant.price_range == '$' %}
-                                ₹500 for two
-                            {% elif restaurant.price_range == '$$' %}
-                                ₹1200 for two
-                            {% elif restaurant.price_range == '$$$' %}
-                                ₹2000 for two
-                            {% elif restaurant.price_range == '$$$$' %}
-                                ₹3000+ for two
-                            {% endif %}
+                            <i class="fas fa-dollar-sign me-1"></i>{{ restaurant.price_range or '$$' }}
                         </p>
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <a href="{{ url_for('restaurants.restaurant_detail', restaurant_id=restaurant.id) }}" class="btn btn-outline-primary">Details</a>
-                            <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.id, group_id=request.args.get('group_id', 0)) }}" method="POST">
-                                <button type="submit" class="like-btn">Like</button>
+                        <div class="d-flex justify-content-between align-items-center mt-auto pt-3">
+                            <a href="{{ url_for('restaurants.restaurant_detail', restaurant_id=restaurant.google_place_id) }}" class="btn btn-outline-primary btn-sm">Details</a>
+                            <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.google_place_id, group_id=request.args.get('group_id', 0)) }}" method="POST">
+                                <button type="submit" class="like-btn">♥</button>
                             </form>
                         </div>
                     </div>
@@ -162,56 +151,32 @@
         {% endfor %}
     {% else %}
         <div class="col-12 text-center mt-5">
-            <div class="alert alert-info">
+            <div class="alert alert-info glass-effect">
                 <h3>No restaurants found</h3>
-                <p>Try adjusting your filters or adding new restaurants.</p>
+                <p>Click "Use My Location" to find restaurants near you!</p>
             </div>
         </div>
     {% endif %}
-</div>
-
-<!-- Swipe Mode Button -->
-<div class="row mt-4">
-    <div class="col-12 text-center">
-        <a href="{{ url_for('restaurants.swipe_restaurants', group_id=request.args.get('group_id', 0)) }}" class="btn btn-primary">
-            <i class="fas fa-exchange-alt me-2"></i> Switch to Swipe Mode
-        </a>
-    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Filter toggle for mobile
-        const filterToggle = document.querySelector('.filter-toggle');
-        if (filterToggle) {
-            const filterSection = document.querySelector('.filter-section');
-            
-            filterToggle.addEventListener('click', function() {
-                filterSection.classList.toggle('d-none');
-                if (filterSection.classList.contains('d-none')) {
-                    filterToggle.innerHTML = '<i class="fas fa-filter me-2"></i> View Filters';
-                } else {
-                    filterToggle.innerHTML = '<i class="fas fa-times me-2"></i> Close Filters';
-                }
-            });
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter toggle for mobile
+    const filterToggle = document.querySelector('.filter-toggle');
+    if (filterToggle) {
+        const filterSection = document.querySelector('.filter-section');
         
-        // Apply visual styling to disabled form elements for non-admin users
-        const isAdminElement = document.querySelector('.filter-section.disabled-section');
-        if (isAdminElement) {
-            const formElements = isAdminElement.querySelectorAll('select, input, button, a.btn');
-            formElements.forEach(element => {
-                if (element.disabled) {
-                    element.classList.add('text-muted');
-                    if (element.tagName === 'A') {
-                        element.style.pointerEvents = 'none';
-                        element.style.opacity = '0.65';
-                    }
-                }
-            });
-        }
-    });
+        filterToggle.addEventListener('click', function() {
+            filterSection.classList.toggle('d-none');
+            if (filterSection.classList.contains('d-none')) {
+                filterToggle.innerHTML = '<i class="fas fa-filter me-2"></i> View Filters';
+            } else {
+                filterToggle.innerHTML = '<i class="fas fa-times me-2"></i> Close Filters';
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

@@ -4,6 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SyncAndDine - Find Restaurants Together</title>
+    <style>
+        /* FINAL NAVBAR FIX - Highest Priority */
+        #mainNavbar {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+        }
+        html[data-theme="dark"] #mainNavbar {
+            background-color: #1c1c1e !important;
+        }
+        #mainNavbar .navbar-brand,
+        #mainNavbar .nav-link {
+            color: #000000 !important;
+        }
+        html[data-theme="dark"] #mainNavbar .navbar-brand,
+        html[data-theme="dark"] #mainNavbar .nav-link {
+            color: #ffffff !important;
+        }
+    </style>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -13,14 +30,20 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-animations.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-theme-fixes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar-fix.css') }}">
     
     {% block styles %}{% endblock %}
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <!-- Apple-style Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top" id="mainNavbar">
+
         <div class="container">
-            <a class="navbar-brand" href="/">SyncAndDine</a>
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-utensils me-2"></i>SyncAndDine
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -28,13 +51,13 @@
                 <ul class="navbar-nav me-auto">
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="/restaurants">Restaurants</a>
+                        <a class="nav-link" href="{{ url_for('restaurants.list_restaurants') }}">Restaurants</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/connection">Connections</a>
+                        <a class="nav-link" href="{{ url_for('social.connections') }}">Connections</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/groups">Groups</a>
+                        <a class="nav-link" href="{{ url_for('social.my_groups') }}">Groups</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -45,14 +68,14 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                             {% if current_user.is_authenticated %}
-                                <li><a class="dropdown-item" href="#" id="toggleTheme">Dark Mode <i class="fas fa-moon ms-2"></i></a></li>
+                                <li><a class="dropdown-item" href="#" id="themeToggle">Dark Mode <i class="fas fa-moon ms-2"></i></a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#helpModal">Help & Support</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="/logout">Logout</a></li>
                             {% else %}
                                 <li><a class="dropdown-item" href="/login">Login</a></li>
                                 <li><a class="dropdown-item" href="/register">Register</a></li>
-                                <li><a class="dropdown-item" href="#" id="toggleTheme">Dark Mode <i class="fas fa-moon ms-2"></i></a></li>
+                                <li><a class="dropdown-item" href="#" id="themeToggle">Dark Mode <i class="fas fa-moon ms-2"></i></a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#helpModal">Help & Support</a></li>
                             {% endif %}
                         </ul>
@@ -77,9 +100,43 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container mt-4">
+    <div class="container page-transition" style="min-height: calc(100vh - 180px);">
         {% block content %}{% endblock %}
     </div>
+    
+    <style>
+        @media (max-width: 768px) {
+            .container.page-transition {
+                margin-top: 0 !important;
+                padding-top: 75px !important;
+                padding-bottom: 2rem !important;
+            }
+            .navbar {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+            .btn {
+                font-size: 0.8rem !important;
+                padding: 0.4rem 0.8rem !important;
+            }
+            .navbar-toggler {
+                border: 1px solid var(--text-primary) !important;
+            }
+            .navbar-toggler-icon {
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+            }
+            [data-theme="dark"] .navbar-toggler-icon {
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+            }
+        }
+        @media (min-width: 769px) {
+            .container.page-transition {
+                padding-bottom: 3rem !important;
+            }
+            .navbar {
+                border-bottom: 1px solid var(--border-color) !important;
+            }
+        }
+    </style>
 
     <!-- Help Modal -->
     <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
@@ -101,10 +158,10 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="footer mt-5 py-3 bg-light">
+    <!-- Apple Footer -->
+    <footer class="footer mt-auto py-4 glass-effect">
         <div class="container text-center">
-            <span class="text-muted">© 2023 SyncAndDine. All rights reserved.</span>
+            <span class="text-muted">© 2024 SyncAndDine. Designed with ❤️</span>
         </div>
     </footer>
 
@@ -112,6 +169,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/theme-toggle.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/location-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/location-search.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/responsive-fixes.js') }}"></script>
     
