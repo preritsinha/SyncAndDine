@@ -13,27 +13,27 @@
                 <div class="mb-3">
                     {{ form.email.label(class="form-label") }}
                     {% if form.email.errors %}
-                        {{ form.email(class="form-control is-invalid", placeholder="Enter username or email") }}
+                        {{ form.email(class="form-control is-invalid", placeholder="Enter username or email", autocomplete="off") }}
                         <div class="invalid-feedback">
                             {% for error in form.email.errors %}
                                 <span>{{ error }}</span>
                             {% endfor %}
                         </div>
                     {% else %}
-                        {{ form.email(class="form-control", placeholder="Enter username or email") }}
+                        {{ form.email(class="form-control", placeholder="Enter username or email", autocomplete="off") }}
                     {% endif %}
                 </div>
                 <div class="mb-3">
                     {{ form.password.label(class="form-label") }}
                     {% if form.password.errors %}
-                        {{ form.password(class="form-control is-invalid", placeholder="Enter your Password") }}
+                        {{ form.password(class="form-control is-invalid", placeholder="Enter your Password", autocomplete="off") }}
                         <div class="invalid-feedback">
                             {% for error in form.password.errors %}
                                 <span>{{ error }}</span>
                             {% endfor %}
                         </div>
                     {% else %}
-                        {{ form.password(class="form-control", placeholder="Enter your Password") }}
+                        {{ form.password(class="form-control", placeholder="Enter your Password", autocomplete="off") }}
                     {% endif %}
                 </div>
                 <div class="mb-3 d-flex justify-content-between align-items-center">
@@ -48,12 +48,7 @@
                 </div>
             </form>
             
-            <div class="social-login">
-                <button class="social-login-btn">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google">
-                    Sign in with Google
-                </button>
-            </div>
+
         </div>
         <div class="auth-footer">
             <p class="mb-0">Don't have an account? <a href="{{ url_for('auth.register') }}" class="text-decoration-none">Sign up</a></p>

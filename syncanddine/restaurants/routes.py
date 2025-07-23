@@ -41,6 +41,7 @@ def list_restaurants():
     area = request.args.get('area', '')
     lat = request.args.get('lat', type=float)
     lon = request.args.get('lon', type=float)
+    restaurant_name = request.args.get('restaurant_name', '').strip()
     
     # Combine city and area for search
     location_query = f"{area}, {city}" if area and city else city
@@ -86,6 +87,8 @@ def list_restaurants():
         restaurants = [r for r in restaurants if cuisine.lower() in r['cuisine_type'].lower()]
     if price_range:
         restaurants = [r for r in restaurants if r['price_range'] == price_range]
+    if restaurant_name:
+        restaurants = [r for r in restaurants if restaurant_name.lower() in r['name'].lower()]
     
     # Get unique cuisines for filter dropdown
     cuisines = list(set([r['cuisine_type'] for r in restaurants if r['cuisine_type']]))

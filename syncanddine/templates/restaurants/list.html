@@ -54,6 +54,13 @@
             <div class="col-12 mb-3">
                 <h5>Find restaurants near you</h5>
             </div>
+            <div class="col-12 mb-3">
+                <label for="restaurant_name" class="form-label">Restaurant Name (Optional)</label>
+                <input type="text" class="form-control" id="restaurant_name" name="restaurant_name" 
+                       placeholder="Search for a specific restaurant..." 
+                       value="{{ request.args.get('restaurant_name', '') }}" autocomplete="off">
+                <small class="text-muted">Leave empty to browse all restaurants</small>
+            </div>
             <div class="col-lg-3 col-md-6 col-12 mb-3">
                 <label for="city" class="form-label">City</label>
                 <select class="form-select searchable-select" id="city" name="city">

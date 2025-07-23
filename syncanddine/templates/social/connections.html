@@ -138,7 +138,7 @@
                 <form action="{{ url_for('social.search_connections') }}" method="POST" id="searchForm">
                     <div class="mb-3">
                         <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username to search" required>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Enter username to search" autocomplete="off" required>
                     </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Search Users</button>
