@@ -45,6 +45,17 @@ def add_connection(user_id):
     else:
         current_user.add_friend(user)
         db.session.commit()
+        
+        # Create notification for the added user
+        from syncanddine.models.message import Message
+        notification = Message(
+            sender_id=current_user.id,
+            recipient_id=user_id,
+            content=f'{current_user.username} added you as a connection!'
+        )
+        db.session.add(notification)
+        db.session.commit()
+        
         flash(f'You are now friends with {user.username}!', 'success')
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -103,6 +114,15 @@ def create_group():
                 user = User.query.get(int(member_id))
                 if user and user != current_user:
                     group.members.append(user)
+                    
+                    # Create notification for added member
+                    from syncanddine.models.message import Message
+                    notification = Message(
+                        sender_id=current_user.id,
+                        recipient_id=user.id,
+                        content=f'{current_user.username} added you to group "{name}"!'
+                    )
+                    db.session.add(notification)
         
         # Set the owner as admin in the association table
         stmt = group_members.update().where(
@@ -182,6 +202,15 @@ def add_group_member(group_id):
         flash(f'{user.username} is already a member of this group.', 'info')
     else:
         group.members.append(user)
+        
+        # Create notification for added member
+        from syncanddine.models.message import Message
+        notification = Message(
+            sender_id=current_user.id,
+            recipient_id=user.id,
+            content=f'{current_user.username} added you to group "{group.name}"!'
+        )
+        db.session.add(notification)
         db.session.commit()
         flash(f'{user.username} has been added to the group!', 'success')
     

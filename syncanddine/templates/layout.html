@@ -30,9 +30,7 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/apple-animations.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive-theme-fixes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar-fix.css') }}">
     
     {% block styles %}{% endblock %}
 </head>
@@ -62,6 +60,20 @@
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell fa-lg"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationBadge" style="display: none;">
+                                <span class="visually-hidden">unread notifications</span>
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" id="notificationList">
+                            <li><h6 class="dropdown-header">Notifications</h6></li>
+                            <li><div class="dropdown-item text-muted">No new notifications</div></li>
+                        </ul>
+                    </li>
+                    {% endif %}
                     <li class="nav-item dropdown">
                         <a class="nav-link" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user-circle fa-lg"></i>
@@ -174,6 +186,13 @@
     <script src="{{ url_for('static', filename='js/location-search.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/responsive-fixes.js') }}"></script>
+    {% if current_user.is_authenticated %}
+    <script>
+        const currentUserId = {{ current_user.id }};
+    </script>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+    {% endif %}
+    <script src="{{ url_for('static', filename='js/restaurant-actions.js') }}"></script>
     
     {% block scripts %}{% endblock %}
 </body>

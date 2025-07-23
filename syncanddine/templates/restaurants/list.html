@@ -141,7 +141,7 @@
                         </p>
                         <div class="d-flex justify-content-between align-items-center mt-auto pt-3">
                             <a href="{{ url_for('restaurants.restaurant_detail', restaurant_id=restaurant.google_place_id) }}" class="btn btn-outline-primary btn-sm">Details</a>
-                            <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.google_place_id, group_id=request.args.get('group_id', 0)) }}" method="POST">
+                            <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.google_place_id, group_id=request.args.get('group_id', 0)) }}" method="POST" class="like-form">
                                 <button type="submit" class="like-btn">♥</button>
                             </form>
                         </div>

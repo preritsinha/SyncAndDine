@@ -35,6 +35,7 @@ def create_app():
     from syncanddine.social.routes import social
     from syncanddine.api.routes import api
     from syncanddine.api.location_routes import location_api
+    from syncanddine.api.notification_routes import notification_api
     
     app.register_blueprint(auth)
     app.register_blueprint(main)
@@ -42,6 +43,7 @@ def create_app():
     app.register_blueprint(social)
     app.register_blueprint(api, url_prefix='/api')
     app.register_blueprint(location_api)
+    app.register_blueprint(notification_api)
     
     # Create database tables
     with app.app_context():
