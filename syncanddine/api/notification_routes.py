@@ -8,14 +8,22 @@ notification_api = Blueprint('notification_api', __name__)
 @notification_api.route('/api/notifications')
 @login_required
 def get_notifications():
-    # Get unread messages from last 24 hours as notifications
-    yesterday = datetime.utcnow() - timedelta(days=1)
+    # Get latest 50 unread messages as notifications
     notifications = Message.query.filter_by(
         recipient_id=current_user.id,
         is_read=False
-    ).filter(
-        Message.timestamp >= yesterday
-    ).order_by(Message.timestamp.desc()).limit(10).all()
+    ).order_by(Message.timestamp.desc()).limit(50).all()
+    
+    # Clean up old notifications (keep only latest 50 per user)
+    old_notifications = Message.query.filter_by(
+        recipient_id=current_user.id
+    ).order_by(Message.timestamp.desc()).offset(50).all()
+    
+    for old_notif in old_notifications:
+        db.session.delete(old_notif)
+    
+    if old_notifications:
+        db.session.commit()
     
     notification_data = []
     for notification in notifications:

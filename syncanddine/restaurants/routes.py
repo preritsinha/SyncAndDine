@@ -70,10 +70,14 @@ def list_restaurants():
     
     # Get live restaurants from Google Places API
     places_service = GooglePlacesService()
-    if location_query:
-        restaurants = places_service.search_restaurants(city=location_query)
-    else:
-        restaurants = places_service.search_restaurants(lat, lon)
+    try:
+        if location_query:
+            restaurants = places_service.search_restaurants(city=location_query)
+        else:
+            restaurants = places_service.search_restaurants(lat, lon)
+    except Exception as e:
+        flash('Unable to load restaurants at the moment. Please try again later.', 'warning')
+        restaurants = []
     
     # Apply filters
     if min_rating > 0:
@@ -102,75 +106,23 @@ def list_restaurants():
 @restaurants.route('/restaurants/swipe')
 @login_required
 def swipe_restaurants():
-    try:
-        # Get filter parameters
-        city = request.args.get('city', '')
-        area = request.args.get('area', '')
-        lat = request.args.get('lat', type=float)
-        lon = request.args.get('lon', type=float)
-        location_query = f"{area}, {city}" if area and city else city
-        min_rating = request.args.get('min_rating', 0, type=float)
-        cuisine = request.args.get('cuisine', '')
-        price_range = request.args.get('price_range', '')
-        group_id = request.args.get('group_id', 0, type=int)
-        
-        # Check if user is admin if group_id is provided
-        is_admin = True
-        group = None
-        
-        if group_id > 0:
-            group = Group.query.get_or_404(group_id)
-            if current_user not in group.members and current_user != group.owner:
-                flash('You are not a member of this group.', 'danger')
-                return redirect(url_for('social.my_groups'))
-            is_admin = group.is_admin(current_user)
-        
-        # Get live restaurants from Google Places API
-        places_service = GooglePlacesService()
-        if location_query:
-            all_restaurants = places_service.search_restaurants(city=location_query)
-        else:
-            all_restaurants = places_service.search_restaurants(lat or 19.0760, lon or 72.8777)
-        
-        # Apply filters
-        if min_rating > 0:
-            all_restaurants = [r for r in all_restaurants if r['rating'] >= min_rating]
-        if cuisine:
-            all_restaurants = [r for r in all_restaurants if cuisine.lower() in r['cuisine_type'].lower()]
-        if price_range:
-            all_restaurants = [r for r in all_restaurants if r['price_range'] == price_range]
-        
-        # Get the first restaurant for swiping
-        restaurant = all_restaurants[0] if all_restaurants else None
-        
-        # Get unique cuisines for filter dropdown
-        cuisines = list(set([r['cuisine_type'] for r in all_restaurants if r['cuisine_type']]))
-        
-        # Get user's groups
-        owned_group_ids = [g.id for g in current_user.owned_groups]
-        member_groups = [g for g in current_user.groups if g.id not in owned_group_ids]
-        user_groups = current_user.owned_groups + member_groups
-        
-        return render_template('restaurants/swipe.html', 
-                              title='Swipe Restaurants', 
-                              restaurant=restaurant,
-                              group=group,
-                              group_id=group_id,
-                              is_admin=is_admin,
-                              cuisines=cuisines,
-                              user_groups=user_groups)
-    except Exception as e:
-        flash('Error loading swipe page', 'danger')
-        return redirect(url_for('restaurants.list_restaurants'))
+    # Redirect swipe to grid view - no more single card swiping
+    group_id = request.args.get('group_id', 0, type=int)
+    flash('Browse restaurants in grid view and click like on your favorites!', 'info')
+    return redirect(url_for('restaurants.list_restaurants', group_id=group_id))
 
 @restaurants.route('/restaurants/<restaurant_id>')
 @login_required
 def restaurant_detail(restaurant_id):
     # Get restaurant details from Google Places API
     places_service = GooglePlacesService()
-    restaurant = places_service.get_restaurant_details(restaurant_id)
-    if not restaurant:
-        flash('Restaurant not found', 'danger')
+    try:
+        restaurant = places_service.get_restaurant_details(restaurant_id)
+        if not restaurant:
+            flash('Restaurant not found', 'danger')
+            return redirect(url_for('restaurants.list_restaurants'))
+    except Exception as e:
+        flash('Unable to load restaurant details. Please try again later.', 'warning')
         return redirect(url_for('restaurants.list_restaurants'))
     return render_template('restaurants/detail.html', 
                           title=restaurant['name'], 
@@ -189,23 +141,23 @@ def like_restaurant(restaurant_id, group_id):
                 return redirect(url_for('restaurants.list_restaurants'))
         
         # Check if user already liked/disliked this restaurant in this group
-        # Use raw SQL to avoid column name issues
+        # Use raw SQL with correct column name
         from sqlalchemy import text
         existing_like = db.session.execute(
-            text("SELECT * FROM restaurant_like WHERE user_id = :user_id AND group_id = :group_id AND restaurant_id = :restaurant_id LIMIT 1"),
+            text("SELECT * FROM restaurant_like WHERE user_id = :user_id AND group_id = :group_id AND restaurant_google_id = :restaurant_id LIMIT 1"),
             {'user_id': current_user.id, 'group_id': group_id if group_id > 0 else None, 'restaurant_id': restaurant_id}
         ).fetchone()
         
         if existing_like:
             # Update existing record using raw SQL
             db.session.execute(
-                text("UPDATE restaurant_like SET liked = 1 WHERE user_id = :user_id AND group_id = :group_id AND restaurant_id = :restaurant_id"),
+                text("UPDATE restaurant_like SET liked = 1 WHERE user_id = :user_id AND group_id = :group_id AND restaurant_google_id = :restaurant_id"),
                 {'user_id': current_user.id, 'group_id': group_id if group_id > 0 else None, 'restaurant_id': restaurant_id}
             )
         else:
             # Insert new record using raw SQL
             db.session.execute(
-                text("INSERT INTO restaurant_like (user_id, restaurant_id, group_id, liked, created_at) VALUES (:user_id, :restaurant_id, :group_id, 1, datetime('now'))"),
+                text("INSERT INTO restaurant_like (user_id, restaurant_google_id, group_id, liked, created_at) VALUES (:user_id, :restaurant_id, :group_id, 1, datetime('now'))"),
                 {'user_id': current_user.id, 'restaurant_id': restaurant_id, 'group_id': group_id if group_id > 0 else None}
             )
         
@@ -226,38 +178,48 @@ def like_restaurant(restaurant_id, group_id):
 @restaurants.route('/restaurants/dislike/<restaurant_id>/<int:group_id>', methods=['POST'])
 @login_required
 def dislike_restaurant(restaurant_id, group_id):
-    group = None
-    
-    if group_id > 0:
-        group = Group.query.get_or_404(group_id)
-        if current_user not in group.members and current_user != group.owner:
-            flash('You are not a member of this group.', 'danger')
-            return redirect(url_for('restaurants.list_restaurants'))
-    
-    existing_like = RestaurantLike.query.filter_by(
-        user_id=current_user.id,
-        restaurant_google_id=restaurant_id,
-        group_id=group_id if group else None
-    ).first()
-    
-    if existing_like:
-        existing_like.liked = False
-    else:
-        like = RestaurantLike(
-            user_id=current_user.id,
-            restaurant_google_id=restaurant_id,
-            group_id=group_id if group else None,
-            liked=False
-        )
-        db.session.add(like)
-    
-    db.session.commit()
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'status': 'success'})
-    
-    flash('Restaurant disliked.', 'info')
-    return redirect(url_for('restaurants.list_restaurants'))
+    try:
+        group = None
+        
+        if group_id > 0:
+            group = Group.query.get_or_404(group_id)
+            if current_user not in group.members and current_user != group.owner:
+                flash('You are not a member of this group.', 'danger')
+                return redirect(url_for('restaurants.list_restaurants'))
+        
+        # Use raw SQL with correct column name
+        from sqlalchemy import text
+        existing_like = db.session.execute(
+            text("SELECT * FROM restaurant_like WHERE user_id = :user_id AND group_id = :group_id AND restaurant_google_id = :restaurant_id LIMIT 1"),
+            {'user_id': current_user.id, 'group_id': group_id if group_id > 0 else None, 'restaurant_id': restaurant_id}
+        ).fetchone()
+        
+        if existing_like:
+            # Update existing record
+            db.session.execute(
+                text("UPDATE restaurant_like SET liked = 0 WHERE user_id = :user_id AND group_id = :group_id AND restaurant_google_id = :restaurant_id"),
+                {'user_id': current_user.id, 'group_id': group_id if group_id > 0 else None, 'restaurant_id': restaurant_id}
+            )
+        else:
+            # Insert new dislike record
+            db.session.execute(
+                text("INSERT INTO restaurant_like (user_id, restaurant_google_id, group_id, liked, created_at) VALUES (:user_id, :restaurant_id, :group_id, 0, datetime('now'))"),
+                {'user_id': current_user.id, 'restaurant_id': restaurant_id, 'group_id': group_id if group_id > 0 else None}
+            )
+        
+        db.session.commit()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'success'})
+        
+        flash('Restaurant disliked.', 'info')
+        return redirect(url_for('restaurants.list_restaurants'))
+    except Exception as e:
+        db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'error', 'message': str(e)})
+        flash('Error disliking restaurant', 'danger')
+        return redirect(url_for('restaurants.list_restaurants'))
 
 @restaurants.route('/restaurants/matches/<int:group_id>')
 @login_required
@@ -301,9 +263,13 @@ def group_matches(group_id):
             
             if all_liked:
                 # Get restaurant details from Google Places API
-                restaurant_details = places_service.get_restaurant_details(restaurant_id)
-                if restaurant_details:
-                    matched_restaurants.append(restaurant_details)
+                try:
+                    restaurant_details = places_service.get_restaurant_details(restaurant_id)
+                    if restaurant_details:
+                        matched_restaurants.append(restaurant_details)
+                except Exception:
+                    # Skip restaurants that can't be loaded
+                    continue
         
         return render_template('restaurants/matches.html',
                               title='Group Matches',
