@@ -59,6 +59,10 @@ body {
     letter-spacing: -0.01em;
     font-weight: 400;
     font-size: 0.85rem;
+    transform: scale(0.9);
+    transform-origin: top left;
+    width: 111.11%;
+    min-width: 111.11%;
 }
 
 /* Sophisticated Typography */
@@ -1129,6 +1133,34 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 /* CSS variable for mobile viewport height fix */
 :root {
     --vh: 1vh;
+}
+
+/* Scaling compensation for containers */
+.container, .container-fluid {
+    max-width: none;
+}
+
+/* Fix for scaled elements positioning */
+.navbar {
+    width: 111.11%;
+}
+
+/* Ensure modals and dropdowns work with scaling */
+.modal, .dropdown-menu {
+    transform: none;
+}
+
+/* Mobile scaling adjustments */
+@media (max-width: 768px) {
+    body {
+        transform: scale(0.95);
+        width: 105.26%;
+        min-width: 105.26%;
+    }
+    
+    .navbar {
+        width: 105.26%;
+    }
 }
 
 /* Additional responsive fixes */
