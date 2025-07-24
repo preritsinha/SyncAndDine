@@ -60,13 +60,17 @@
         </div>
     </div>
     
-    {% if group_id %}
-        <div class="text-center mt-4">
+    <div class="text-center mt-4">
+        {% if group_id %}
             <a href="{{ url_for('restaurants.group_matches', group_id=group_id) }}" class="btn btn-success">
-                <i class="fas fa-check-circle me-2"></i> View Matches
+                <i class="fas fa-check-circle me-2"></i> View Group Matches
             </a>
-        </div>
-    {% endif %}
+        {% else %}
+            <a href="{{ url_for('restaurants.list_restaurants') }}?liked_only=true" class="btn btn-success">
+                <i class="fas fa-heart me-2"></i> View My Favorites
+            </a>
+        {% endif %}
+    </div>
 {% else %}
     <div class="text-center mt-5">
         <div class="alert alert-info">

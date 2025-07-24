@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>My Restaurant Selections</h1>
+    <div>
+        <a href="{{ url_for('restaurants.export_selections') }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-download me-2"></i> Export List
+        </a>
+        <form action="{{ url_for('restaurants.delete_all_selections') }}" method="POST" class="d-inline me-2">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="fas fa-trash me-2"></i> Delete All
+            </button>
+        </form>
+        <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Browse
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-success glass-effect">
+    <h4><i class="fas fa-check-circle me-2"></i> Selection Complete!</h4>
+    <p class="mb-0 text-white">You have selected <strong>{{ total_count }}</strong> restaurants. Your selections are saved and ready to explore!</p>
+</div>
+
+{% if restaurants %}
+<div class="row">
+    {% for restaurant in restaurants %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="restaurant-card">
+                <img src="{{ restaurant.image_url or 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop' }}" 
+                     class="card-img-top" 
+                     alt="{{ restaurant.name }}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="rating-badge">
+                            <div class="stars">
+                                {% set rating = restaurant.rating or 0 %}
+                                {% for i in range(5) %}
+                                    {% if i < rating|int %}
+                                        <span class="star filled">★</span>
+                                    {% else %}
+                                        <span class="star empty">☆</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="rating-number">{{ "%.1f"|format(rating) }}</span>
+                        </div>
+                        <span class="badge bg-success">Liked</span>
+                    </div>
+                    <h5 class="card-title">{{ restaurant.name }}</h5>
+                    <p class="location">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ restaurant.location }}
+                    </p>
+                    {% if restaurant.phone %}
+                    <p class="mb-2">
+                        <i class="fas fa-phone me-1"></i>{{ restaurant.phone }}
+                    </p>
+                    {% endif %}
+                    <div class="d-flex gap-2 mt-3">
+                        <a href="{{ url_for('restaurants.restaurant_detail', restaurant_id=restaurant.google_place_id) }}" class="btn btn-outline-primary btn-sm flex-fill">
+                            <i class="fas fa-info-circle me-1"></i> Details
+                        </a>
+                        {% if restaurant.website %}
+                        <a href="{{ restaurant.website }}" target="_blank" class="btn btn-outline-success btn-sm flex-fill">
+                            <i class="fas fa-external-link-alt me-1"></i> Visit
+                        </a>
+                        {% endif %}
+                        <form action="{{ url_for('restaurants.remove_selection', restaurant_id=restaurant.google_place_id) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-times me-1"></i> Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="text-center mt-4">
+    <div class="card glass-effect">
+        <div class="card-body">
+            <h5>What's Next?</h5>
+            <p class="text-white">Your restaurant selections are saved! You can:</p>
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i> Add More Restaurants
+                </a>
+                <a href="{{ url_for('restaurants.export_selections') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-2"></i> Export Your List
+                </a>
+                <a href="{{ url_for('social.create_group') }}" class="btn btn-outline-success">
+                    <i class="fas fa-users me-2"></i> Create Dining Group
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="text-center mt-5">
+    <div class="alert alert-info glass-effect">
+        <h3>No Restaurants Selected</h3>
+        <p>You haven't liked any restaurants yet. Start browsing and like restaurants to build your collection!</p>
+        <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-search me-2"></i> Browse Restaurants
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

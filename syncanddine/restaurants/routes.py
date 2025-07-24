@@ -17,6 +17,7 @@ from syncanddine import db
 from syncanddine.models.restaurant import RestaurantLike
 from syncanddine.models.user import Group
 from syncanddine.restaurants.places_service import GooglePlacesService
+from datetime import datetime
 
 # Create restaurants blueprint for modular route organization
 restaurants = Blueprint('restaurants', __name__)
@@ -54,8 +55,8 @@ def list_restaurants():
     if not city and not (lat and lon):
         # Try to get user's country/region for better defaults
         import os
-        default_city = os.getenv('DEFAULT_CITY', 'Mumbai, India')
-        default_coords = os.getenv('DEFAULT_COORDS', '19.0760,72.8777').split(',')
+        default_city = os.getenv('DEFAULT_CITY', 'Bangalore, India')
+        default_coords = os.getenv('DEFAULT_COORDS', '12.9716,77.5946').split(',')
         lat, lon = float(default_coords[0]), float(default_coords[1])
     
     # Check if user is admin if group_id is provided
@@ -90,6 +91,20 @@ def list_restaurants():
     if restaurant_name:
         restaurants = [r for r in restaurants if restaurant_name.lower() in r['name'].lower()]
     
+    # Filter for personal favorites if requested
+    liked_only = request.args.get('liked_only', False)
+    if liked_only and not group_id:
+        from syncanddine.models.restaurant import RestaurantLike
+        liked_restaurant_ids = [like.restaurant_google_id for like in 
+                              RestaurantLike.query.filter_by(user_id=current_user.id, group_id=None, liked=True).all()]
+        restaurants = [r for r in restaurants if r['google_place_id'] in liked_restaurant_ids]
+        
+        # Add notification for completed selection
+        if restaurants:
+            flash(f'Great! You have selected {len(restaurants)} favorite restaurants.', 'success')
+        else:
+            flash('You haven\'t liked any restaurants yet. Go back and like some restaurants first!', 'info')
+    
     # Get unique cuisines for filter dropdown
     cuisines = list(set([r['cuisine_type'] for r in restaurants if r['cuisine_type']]))
     
@@ -111,7 +126,7 @@ def list_restaurants():
 def swipe_restaurants():
     # Redirect swipe to grid view - no more single card swiping
     group_id = request.args.get('group_id', 0, type=int)
-    flash('Browse restaurants in grid view and click like on your favorites!', 'info')
+    # flash('Browse restaurants and click like on your favorites!', 'info')
     return redirect(url_for('restaurants.list_restaurants', group_id=group_id))
 
 @restaurants.route('/restaurants/<restaurant_id>')
@@ -223,6 +238,211 @@ def dislike_restaurant(restaurant_id, group_id):
             return jsonify({'status': 'error', 'message': str(e)})
         flash('Error disliking restaurant', 'danger')
         return redirect(url_for('restaurants.list_restaurants'))
+
+@restaurants.route('/restaurants/finish-personal-selection')
+@login_required
+def finish_personal_selection():
+    """Handle personal selection completion with summary and export options"""
+    from syncanddine.models.restaurant import RestaurantLike
+    
+    # Get user's liked restaurants
+    liked_restaurants = RestaurantLike.query.filter_by(
+        user_id=current_user.id, 
+        group_id=None, 
+        liked=True
+    ).all()
+    
+    # Get restaurant details from Google Places API
+    places_service = GooglePlacesService()
+    restaurant_details = []
+    
+    try:
+        for like in liked_restaurants:
+            details = places_service.get_restaurant_details(like.restaurant_google_id)
+            if details:
+                restaurant_details.append(details)
+    except Exception as e:
+        flash('Some restaurant details could not be loaded.', 'warning')
+    
+    return render_template('restaurants/personal_summary.html',
+                          title='My Restaurant Selections',
+                          restaurants=restaurant_details,
+                          total_count=len(restaurant_details))
+
+@restaurants.route('/restaurants/finish-group-selection/<int:group_id>')
+@login_required
+def finish_group_selection(group_id):
+    """Handle group selection completion with matches, recommendations, and notifications"""
+    from syncanddine.models.restaurant import RestaurantLike
+    try:
+        from syncanddine.models.message import Message
+    except ImportError:
+        Message = None
+    
+    group = Group.query.get_or_404(group_id)
+    
+    if current_user not in group.members:
+        flash('You are not a member of this group.', 'danger')
+        return redirect(url_for('social.my_groups'))
+    
+    # Notify other group members that user finished selection
+    if Message:
+        for member in group.members:
+            if member != current_user:
+                notification = Message(
+                    sender_id=current_user.id,
+                    recipient_id=member.id,
+                    content=f'{current_user.username} finished selecting restaurants in group "{group.name}"!'
+                )
+                db.session.add(notification)
+    
+    db.session.commit()
+    
+    # Get all group members' liked restaurants
+    group_likes = RestaurantLike.query.filter_by(group_id=group_id, liked=True).all()
+    
+    # Find restaurants liked by ALL members (perfect matches)
+    restaurant_votes = {}
+    for like in group_likes:
+        if like.restaurant_google_id not in restaurant_votes:
+            restaurant_votes[like.restaurant_google_id] = set()
+        restaurant_votes[like.restaurant_google_id].add(like.user_id)
+    
+    total_members = group.members.count()
+    perfect_matches = []
+    partial_matches = []
+    
+    for restaurant_id, voters in restaurant_votes.items():
+        if len(voters) == total_members:
+            perfect_matches.append(restaurant_id)
+        elif len(voters) >= max(2, total_members // 2):  # At least half or 2 people
+            partial_matches.append((restaurant_id, len(voters)))
+    
+    # Sort partial matches by vote count
+    partial_matches.sort(key=lambda x: x[1], reverse=True)
+    
+    # Get restaurant details from Google Places API
+    places_service = GooglePlacesService()
+    perfect_restaurants = []
+    recommended_restaurants = []
+    
+    try:
+        # Get perfect matches
+        for restaurant_id in perfect_matches:
+            details = places_service.get_restaurant_details(restaurant_id)
+            if details:
+                perfect_restaurants.append(details)
+        
+        # Get recommendations if no perfect matches
+        if not perfect_matches and partial_matches:
+            for restaurant_id, votes in partial_matches[:5]:  # Top 5 recommendations
+                details = places_service.get_restaurant_details(restaurant_id)
+                if details:
+                    details['vote_count'] = votes
+                    details['vote_percentage'] = round((votes / total_members) * 100)
+                    recommended_restaurants.append(details)
+    
+    except Exception as e:
+        flash('Some restaurant details could not be loaded.', 'warning')
+    
+    return render_template('restaurants/group_results.html',
+                          title=f'Results for {group.name}',
+                          group=group,
+                          perfect_matches=perfect_restaurants,
+                          recommendations=recommended_restaurants,
+                          total_members=total_members)
+
+@restaurants.route('/restaurants/export-selections')
+@login_required
+def export_selections():
+    """Export user's restaurant selections as JSON"""
+    from syncanddine.models.restaurant import RestaurantLike
+    import json
+    
+    group_id = request.args.get('group_id', type=int)
+    
+    if group_id:
+        likes = RestaurantLike.query.filter_by(
+            user_id=current_user.id,
+            group_id=group_id,
+            liked=True
+        ).all()
+        filename = f'group_{group_id}_selections.json'
+    else:
+        likes = RestaurantLike.query.filter_by(
+            user_id=current_user.id,
+            group_id=None,
+            liked=True
+        ).all()
+        filename = 'my_restaurant_selections.json'
+    
+    # Get restaurant details
+    places_service = GooglePlacesService()
+    export_data = {
+        'user': current_user.username,
+        'export_date': datetime.utcnow().isoformat(),
+        'restaurants': []
+    }
+    
+    try:
+        for like in likes:
+            details = places_service.get_restaurant_details(like.restaurant_google_id)
+            if details:
+                export_data['restaurants'].append({
+                    'name': details['name'],
+                    'location': details['location'],
+                    'rating': details['rating'],
+                    'google_place_id': details['google_place_id'],
+                    'phone': details.get('phone', ''),
+                    'website': details.get('website', '')
+                })
+    except Exception as e:
+        flash('Error exporting selections.', 'danger')
+        return redirect(url_for('restaurants.list_restaurants'))
+    
+    response = jsonify(export_data)
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
+
+@restaurants.route('/restaurants/remove-selection/<restaurant_id>', methods=['POST'])
+@login_required
+def remove_selection(restaurant_id):
+    """Remove a restaurant from user's personal selections"""
+    try:
+        from sqlalchemy import text
+        
+        # Remove the restaurant from personal selections (group_id = None)
+        db.session.execute(
+            text("DELETE FROM restaurant_like WHERE user_id = :user_id AND restaurant_google_id = :restaurant_id AND group_id IS NULL"),
+            {'user_id': current_user.id, 'restaurant_id': restaurant_id}
+        )
+        
+        db.session.commit()
+        
+    except Exception as e:
+        db.session.rollback()
+    
+    return redirect(url_for('restaurants.finish_personal_selection'))
+
+@restaurants.route('/restaurants/delete-all-selections', methods=['POST'])
+@login_required
+def delete_all_selections():
+    """Delete all personal restaurant selections"""
+    try:
+        from sqlalchemy import text
+        
+        # Delete all personal selections (group_id = None)
+        db.session.execute(
+            text("DELETE FROM restaurant_like WHERE user_id = :user_id AND group_id IS NULL"),
+            {'user_id': current_user.id}
+        )
+        
+        db.session.commit()
+        
+    except Exception as e:
+        db.session.rollback()
+    
+    return redirect(url_for('restaurants.finish_personal_selection'))
 
 @restaurants.route('/restaurants/matches/<int:group_id>')
 @login_required

@@ -39,13 +39,11 @@ class LocationManager {
                 const location = await this.getCurrentLocation();
                 this.applyLocationToPage(location.lat, location.lon);
                 
-                // Reload page with location if no restaurants shown
-                if (document.querySelectorAll('.restaurant-card').length === 0) {
-                    const url = new URL(window.location);
-                    url.searchParams.set('lat', location.lat);
-                    url.searchParams.set('lon', location.lon);
-                    window.location.href = url.toString();
-                }
+                // Always reload page with location to refresh restaurants
+                const url = new URL(window.location);
+                url.searchParams.set('lat', location.lat);
+                url.searchParams.set('lon', location.lon);
+                window.location.href = url.toString();
             } catch (error) {
                 console.log('Auto-location failed, user can manually enable');
             }
@@ -72,10 +70,8 @@ class LocationManager {
                 url.searchParams.set('lon', lon);
                 window.history.replaceState({}, '', url.toString());
                 
-                // Reload page with location if no restaurants are shown
-                if (document.querySelectorAll('.restaurant-card').length === 0) {
-                    window.location.href = url.toString();
-                }
+                // Always reload page with location to refresh restaurants
+                window.location.href = url.toString();
             }
         }
         

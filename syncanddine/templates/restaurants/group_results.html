@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Results for {{ group.name }}</h1>
+    <div>
+        <a href="{{ url_for('restaurants.export_selections', group_id=group.id) }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-download me-2"></i> Export Results
+        </a>
+        <a href="{{ url_for('restaurants.list_restaurants', group_id=group.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Back to Browse
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-success glass-effect">
+    <h4><i class="fas fa-check-circle me-2"></i> Selection Complete!</h4>
+    <p class="mb-0 text-white">Group members have been notified that you finished selecting restaurants.</p>
+</div>
+
+{% if perfect_matches %}
+<div class="mb-5">
+    <h2 class="text-success mb-3">Perfect Matches - Everyone Agrees!</h2>
+    <div class="row">
+        {% for restaurant in perfect_matches %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="restaurant-card border-success">
+                    <img src="{{ restaurant.image_url or 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop' }}" 
+                         class="card-img-top" 
+                         alt="{{ restaurant.name }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="rating-badge">
+                                <div class="stars">
+                                    {% set rating = restaurant.rating or 0 %}
+                                    {% for i in range(5) %}
+                                        {% if i < rating|int %}
+                                            <span class="star filled">★</span>
+                                        {% else %}
+                                            <span class="star empty">☆</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="rating-number">{{ "%.1f"|format(rating) }}</span>
+                            </div>
+                            <span class="badge bg-success">100% Match</span>
+                        </div>
+                        <h5 class="card-title">{{ restaurant.name }}</h5>
+                        <p class="location">
+                            <i class="fas fa-map-marker-alt me-1"></i>{{ restaurant.location }}
+                        </p>
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="{{ url_for('restaurants.restaurant_detail', restaurant_id=restaurant.google_place_id) }}" class="btn btn-success btn-sm flex-fill">
+                                <i class="fas fa-info-circle me-1"></i> Details
+                            </a>
+                            {% if restaurant.website %}
+                            <a href="{{ restaurant.website }}" target="_blank" class="btn btn-outline-success btn-sm flex-fill">
+                                <i class="fas fa-external-link-alt me-1"></i> Visit
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if recommendations and not perfect_matches %}
+<div class="mb-5">
+    <h2 class="text-warning mb-3">Smart Recommendations - Best Compromise</h2>
+    <div class="alert alert-info glass-effect mb-4">
+        <p class="mb-0"><i class="fas fa-lightbulb me-2"></i> No perfect matches found, but here are restaurants that most group members liked:</p>
+    </div>
+    <div class="row">
+        {% for restaurant in recommendations %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="restaurant-card border-warning">
+                    <img src="{{ restaurant.image_url or 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop' }}" 
+                         class="card-img-top" 
+                         alt="{{ restaurant.name }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="rating-badge">
+                                <div class="stars">
+                                    {% set rating = restaurant.rating or 0 %}
+                                    {% for i in range(5) %}
+                                        {% if i < rating|int %}
+                                            <span class="star filled">★</span>
+                                        {% else %}
+                                            <span class="star empty">☆</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="rating-number">{{ "%.1f"|format(rating) }}</span>
+                            </div>
+                            <span class="badge bg-warning">{{ restaurant.vote_percentage }}% Match</span>
+                        </div>
+                        <h5 class="card-title">{{ restaurant.name }}</h5>
+                        <p class="location">
+                            <i class="fas fa-map-marker-alt me-1"></i>{{ restaurant.location }}
+                        </p>
+                        <p class="text-muted small">
+                            <i class="fas fa-users me-1"></i>{{ restaurant.vote_count }} of {{ total_members }} members liked this
+                        </p>
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="{{ url_for('restaurants.restaurant_detail', restaurant_id=restaurant.google_place_id) }}" class="btn btn-warning btn-sm flex-fill">
+                                <i class="fas fa-info-circle me-1"></i> Details
+                            </a>
+                            {% if restaurant.website %}
+                            <a href="{{ restaurant.website }}" target="_blank" class="btn btn-outline-warning btn-sm flex-fill">
+                                <i class="fas fa-external-link-alt me-1"></i> Visit
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if not perfect_matches and not recommendations %}
+<div class="text-center mt-5">
+    <div class="alert alert-warning glass-effect">
+        <h3>No Common Preferences Yet</h3>
+        <p>Group members haven't found restaurants they all agree on. Here are some options:</p>
+        <div class="d-flex gap-2 justify-content-center flex-wrap mt-3">
+            <a href="{{ url_for('restaurants.list_restaurants', group_id=group.id) }}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i> Browse More Restaurants
+            </a>
+            <a href="{{ url_for('social.group_detail', group_id=group.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-users me-2"></i> Check Group Status
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="text-center mt-4">
+    <div class="card glass-effect">
+        <div class="card-body">
+            <h5>Next Steps</h5>
+            <p class="text-body">Your group results are ready! You can:</p>
+            <div class="d-flex gap-2 justify-content-center flex-wrap">
+                {% if perfect_matches %}
+                <a href="#" class="btn btn-success" onclick="alert('Booking feature coming soon!')">
+                    <i class="fas fa-calendar-check me-2"></i> Book a Table
+                </a>
+                {% endif %}
+                <a href="{{ url_for('restaurants.export_selections', group_id=group.id) }}" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-2"></i> Export Results
+                </a>
+                <a href="{{ url_for('social.group_detail', group_id=group.id) }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-users me-2"></i> Back to Group
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

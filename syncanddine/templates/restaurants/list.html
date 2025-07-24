@@ -31,7 +31,7 @@
                 <form method="GET" action="{{ url_for('restaurants.list_restaurants') }}">
                     <div class="input-group">
                         <select class="form-select" name="group_id">
-                            <option value="">Personal View (No Group)</option>
+                            <option value="" {% if not request.args.get('group_id') %}selected{% endif %}>Personal Dining (Just Me)</option>
                             {% for g in user_groups %}
                                 <option value="{{ g.id }}" {% if request.args.get('group_id')|int == g.id %}selected{% endif %}>{{ g.name }}</option>
                             {% endfor %}
@@ -108,6 +108,21 @@
     </form>
 </div>
 
+<!-- Finish Selection Button -->
+{% if restaurants %}
+<div class="text-center mb-4">
+    {% if request.args.get('group_id') and request.args.get('group_id')|int > 0 %}
+        <a href="{{ url_for('restaurants.finish_group_selection', group_id=request.args.get('group_id')) }}" class="btn btn-success btn-lg">
+            Finish Selection
+        </a>
+    {% else %}
+        <a href="{{ url_for('restaurants.finish_personal_selection') }}" class="btn btn-success btn-lg">
+            Finish Selection
+        </a>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- Restaurant Cards -->
 <div class="row">
     {% if restaurants %}
@@ -148,8 +163,8 @@
                         </p>
                         <div class="d-flex justify-content-between align-items-center mt-auto pt-3">
                             <a href="{{ url_for('restaurants.restaurant_detail', restaurant_id=restaurant.google_place_id) }}" class="btn btn-outline-primary btn-sm">Details</a>
-                            <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.google_place_id, group_id=request.args.get('group_id', 0)) }}" method="POST" class="like-form">
-                                <button type="submit" class="like-btn">♥</button>
+                            <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.google_place_id, group_id=request.args.get('group_id') or 0) }}" method="POST" class="like-form">
+                                <button type="submit" class="like-btn" title="{% if request.args.get('group_id') %}Add to group favorites{% else %}Add to my favorites{% endif %}">♥</button>
                             </form>
                         </div>
                     </div>

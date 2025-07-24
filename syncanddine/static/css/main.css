@@ -1,48 +1,48 @@
 /* Premium Design System - Light & Dark Mode */
 :root {
-    --primary-color: #007AFF;
-    --primary-gradient: linear-gradient(135deg, #007AFF, #5AC8FA);
-    --secondary-color: #5856D6;
-    --success-color: #34C759;
-    --warning-color: #FF9500;
-    --danger-color: #FF3B30;
+    --primary-color: #FF6B35;
+    --primary-gradient: linear-gradient(135deg, #FF6B35, #FF8E53);
+    --secondary-color: #F7931E;
+    --success-color: #2ECC71;
+    --warning-color: #F39C12;
+    --danger-color: #E74C3C;
     --background-primary: #FFFFFF;
-    --background-secondary: #FAFAFA;
-    --background-tertiary: rgba(255, 255, 255, 0.8);
-    --text-primary: #1D1D1F;
-    --text-secondary: #86868B;
-    --text-tertiary: #6E6E73;
-    --border-color: rgba(0, 0, 0, 0.1);
-    --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.04);
-    --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.08);
-    --shadow-heavy: 0 16px 48px rgba(0, 0, 0, 0.12);
+    --background-secondary: #F8F9FA;
+    --background-tertiary: rgba(255, 255, 255, 0.9);
+    --text-primary: #2C3E50;
+    --text-secondary: #7F8C8D;
+    --text-tertiary: #95A5A6;
+    --border-color: rgba(0, 0, 0, 0.08);
+    --shadow-light: 0 2px 12px rgba(255, 107, 53, 0.1);
+    --shadow-medium: 0 8px 25px rgba(255, 107, 53, 0.15);
+    --shadow-heavy: 0 16px 40px rgba(255, 107, 53, 0.2);
     --border-radius: 6px;
     --border-radius-large: 6px;
-    --transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    --glass-bg: rgba(255, 255, 255, 0.8);
-    --glass-border: rgba(255, 255, 255, 0.2);
+    --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 107, 53, 0.1);
 }
 
 /* Premium Dark Mode Variables */
 [data-theme="dark"] {
-    --primary-color: #0A84FF;
-    --primary-gradient: linear-gradient(135deg, #0A84FF, #64D2FF);
-    --secondary-color: #5E5CE6;
-    --success-color: #30D158;
-    --warning-color: #FF9F0A;
-    --danger-color: #FF453A;
-    --background-primary: #000000;
-    --background-secondary: #1C1C1E;
-    --background-tertiary: rgba(28, 28, 30, 0.8);
-    --text-primary: #F2F2F7;
-    --text-secondary: #8E8E93;
-    --text-tertiary: #6E6E73;
+    --primary-color: #FF6B35;
+    --primary-gradient: linear-gradient(135deg, #FF6B35, #FF8E53);
+    --secondary-color: #F7931E;
+    --success-color: #2ECC71;
+    --warning-color: #F39C12;
+    --danger-color: #E74C3C;
+    --background-primary: #1A1A1A;
+    --background-secondary: #2D2D2D;
+    --background-tertiary: rgba(45, 45, 45, 0.9);
+    --text-primary: #FFFFFF;
+    --text-secondary: #BDC3C7;
+    --text-tertiary: #95A5A6;
     --border-color: rgba(255, 255, 255, 0.1);
-    --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.4);
-    --shadow-heavy: 0 16px 48px rgba(0, 0, 0, 0.6);
-    --glass-bg: rgba(28, 28, 30, 0.8);
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --shadow-light: 0 2px 12px rgba(0, 0, 0, 0.4);
+    --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.5);
+    --shadow-heavy: 0 16px 40px rgba(0, 0, 0, 0.7);
+    --glass-bg: rgba(45, 45, 45, 0.85);
+    --glass-border: rgba(255, 107, 53, 0.2);
 }
 
 body {
@@ -137,14 +137,17 @@ h6 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
 }
 
 .navbar-brand {
-    font-weight: 800;
-    font-size: 1.4rem;
+    font-weight: 700;
+    font-size: 1.3rem;
     letter-spacing: -0.02em;
     background: var(--primary-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    position: relative;
 }
+
+
 
 [data-theme="dark"] .navbar {
     --bs-navbar-color: #ffffff;
