@@ -98,13 +98,15 @@
     </nav>
 
     <!-- Flash Messages -->
-    <div class="container mt-3">
+    <div id="flashContainer">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="flash-notification flash-{{ category }}" data-message="{{ message }}">
+                        <div class="flash-content">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% elif category == 'warning' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                            {{ message }}
+                        </div>
                     </div>
                 {% endfor %}
             {% endif %}
@@ -112,7 +114,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container page-transition" style="min-height: calc(100vh - 180px);">
+    <div class="container page-transition" style="min-height: calc(100vh - 140px); padding-bottom: 2rem;">
         {% block content %}{% endblock %}
     </div>
     
@@ -169,7 +171,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Need assistance? Contact our support team at:</p>
-                    <p><strong>Email:</strong> support@syncanddine.com</p>
+                    <p><strong>Email:</strong> Coming Soon </p>
                     <p>We'll get back to you as soon as possible.</p>
                 </div>
                 <div class="modal-footer">
@@ -180,7 +182,7 @@
     </div>
 
     <!-- Apple Footer -->
-    <footer class="footer mt-auto py-4 glass-effect">
+    <footer class="footer mt-auto glass-effect" style="padding: 1rem 0;">
         <div class="container text-center">
             <span class="text-muted">© 2025 SyncAndDine. Designed with ❤️</span>
         </div>
@@ -202,6 +204,8 @@
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
     {% endif %}
     <script src="{{ url_for('static', filename='js/restaurant-actions.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/flash-notifications.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/restaurant-like.js') }}"></script>
     
     {% block scripts %}{% endblock %}
 </body>

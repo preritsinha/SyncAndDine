@@ -62,7 +62,7 @@ body {
 }
 
 /* Sophisticated Typography */
-h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 0.75rem; }
+h1 { font-size: 1.6rem; font-weight: 600; margin-bottom: 0.75rem; margin-top: 1rem;}
 h2 { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.6rem; }
 h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
 h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.4rem; }
@@ -128,7 +128,7 @@ h6 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
     -webkit-backdrop-filter: blur(40px) saturate(200%);
     border-bottom: 1px solid var(--glass-border);
     box-shadow: var(--shadow-light);
-    padding: 0.5rem 0;
+    padding: 1rem 0;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -745,50 +745,71 @@ body.dark-mode .restaurant-card .price {
     color: #5cb85c;
 }
 
-/* Apple Like Button */
+/* Sophisticated Like Button */
 .like-btn {
-    background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
-    color: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: 6px;
+    font-weight: 500;
+    padding: 0.35rem 0.7rem;
     border: none;
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+    transition: var(--transition);
+    font-size: 0.75rem;
+    letter-spacing: -0.01em;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(10px);
 }
 
 .like-btn::before {
-    content: '♡';
-    font-size: 1.1rem;
-    transition: all 0.3s ease;
-    font-weight: 300;
-}
-
-.like-btn:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 8px 30px rgba(255, 107, 107, 0.4);
-    background: linear-gradient(135deg, #FF5252, #FF7979);
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
 }
 
 .like-btn:hover::before {
-    content: '♥';
-    font-weight: 400;
+    left: 100%;
 }
 
-.like-btn:active {
-    transform: translateY(0) scale(0.98);
+.like-btn {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+}
+
+.like-btn:hover {
+    background: var(--primary-gradient);
+    color: white;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--shadow-medium);
+    border-color: transparent;
 }
 
 [data-theme="dark"] .like-btn {
-    background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
-    box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--glass-bg);
+}
+
+[data-theme="dark"] .like-btn:hover {
+    background: var(--primary-gradient);
+    color: white;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: var(--shadow-medium);
+    border-color: transparent;
+}
+
+[data-theme="dark"] .like-btn.liked {
+    background: var(--primary-gradient);
+    color: white;
+    border-color: transparent;
 }
 
 /* Apple Sync Button */
@@ -946,9 +967,9 @@ body.dark-mode .autocomplete-item:hover {
     background: var(--glass-bg);
     backdrop-filter: blur(40px) saturate(200%);
     -webkit-backdrop-filter: blur(40px) saturate(200%);
-    padding: 1.25rem;
+    padding: 1rem;
     border-radius: var(--border-radius-large);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     border: 0.5px solid var(--glass-border);
     box-shadow: var(--shadow-medium);
     position: relative;
@@ -1129,6 +1150,99 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
 /* CSS variable for mobile viewport height fix */
 :root {
     --vh: 1vh;
+}
+
+/* Flash Notifications */
+#flashContainer {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.flash-notification {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.5rem;
+    box-shadow: var(--shadow-medium);
+    transform: translateX(400px);
+    opacity: 0;
+    max-width: 350px;
+    word-wrap: break-word;
+    animation-fill-mode: forwards;
+}
+
+.flash-success {
+    border-left: 4px solid var(--success-color);
+    color: var(--success-color);
+}
+
+.flash-danger {
+    border-left: 4px solid var(--danger-color);
+    color: var(--danger-color);
+}
+
+.flash-warning {
+    border-left: 4px solid var(--warning-color);
+    color: var(--warning-color);
+}
+
+.flash-info {
+    border-left: 4px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.flash-content {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+@keyframes slideInFlash {
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutFlash {
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    #flashContainer {
+        right: 10px;
+        left: 10px;
+        top: 70px;
+    }
+    
+    .flash-notification {
+        max-width: none;
+        transform: translateY(-100px);
+        animation: slideInFlashMobile 0.5s ease-out forwards, slideOutFlashMobile 0.5s ease-in 9.5s forwards;
+    }
+    
+    @keyframes slideInFlashMobile {
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutFlashMobile {
+        to {
+            transform: translateY(-100px);
+            opacity: 0;
+        }
+    }
 }
 
 /* Additional responsive fixes */

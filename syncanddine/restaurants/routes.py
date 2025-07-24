@@ -167,30 +167,30 @@ def like_restaurant(restaurant_id, group_id):
         ).fetchone()
         
         if existing_like:
-            # Update existing record using raw SQL
+            # Delete existing record (toggle off)
             db.session.execute(
-                text("UPDATE restaurant_like SET liked = 1 WHERE user_id = :user_id AND group_id = :group_id AND restaurant_google_id = :restaurant_id"),
+                text("DELETE FROM restaurant_like WHERE user_id = :user_id AND group_id = :group_id AND restaurant_google_id = :restaurant_id"),
                 {'user_id': current_user.id, 'group_id': group_id if group_id > 0 else None, 'restaurant_id': restaurant_id}
             )
+            action = 'disliked'
         else:
             # Insert new record using raw SQL
             db.session.execute(
                 text("INSERT INTO restaurant_like (user_id, restaurant_google_id, group_id, liked, created_at) VALUES (:user_id, :restaurant_id, :group_id, 1, datetime('now'))"),
                 {'user_id': current_user.id, 'restaurant_id': restaurant_id, 'group_id': group_id if group_id > 0 else None}
             )
+            action = 'liked'
         
         db.session.commit()
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'status': 'success'})
+            return jsonify({'status': 'success', 'action': action})
         
-        flash('Restaurant liked!', 'success')
         return redirect(url_for('restaurants.list_restaurants'))
     except Exception as e:
         db.session.rollback()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'status': 'error', 'message': str(e)})
-        flash('Error liking restaurant', 'danger')
+            return jsonify({'status': 'error'})
         return redirect(url_for('restaurants.list_restaurants'))
 
 @restaurants.route('/restaurants/dislike/<restaurant_id>/<int:group_id>', methods=['POST'])
@@ -230,13 +230,11 @@ def dislike_restaurant(restaurant_id, group_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({'status': 'success'})
         
-        flash('Restaurant disliked.', 'info')
         return redirect(url_for('restaurants.list_restaurants'))
     except Exception as e:
         db.session.rollback()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'status': 'error', 'message': str(e)})
-        flash('Error disliking restaurant', 'danger')
+            return jsonify({'status': 'error'})
         return redirect(url_for('restaurants.list_restaurants'))
 
 @restaurants.route('/restaurants/finish-personal-selection')
@@ -419,8 +417,13 @@ def remove_selection(restaurant_id):
         
         db.session.commit()
         
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'success'})
+        
     except Exception as e:
         db.session.rollback()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'status': 'error'})
     
     return redirect(url_for('restaurants.finish_personal_selection'))
 

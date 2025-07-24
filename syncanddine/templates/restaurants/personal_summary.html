@@ -62,12 +62,12 @@
                             <i class="fas fa-info-circle me-1"></i> Details
                         </a>
                         {% if restaurant.website %}
-                        <a href="{{ restaurant.website }}" target="_blank" class="btn btn-outline-success btn-sm flex-fill">
+                        <a href="{{ restaurant.website }}" target="_blank" class="btn btn-outline-success btn-sm flex-fill" style="border: 1px solid var(--success-color);">
                             <i class="fas fa-external-link-alt me-1"></i> Visit
                         </a>
                         {% endif %}
-                        <form action="{{ url_for('restaurants.remove_selection', restaurant_id=restaurant.google_place_id) }}" method="POST" class="d-inline">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <form action="{{ url_for('restaurants.remove_selection', restaurant_id=restaurant.google_place_id) }}" method="POST" class="flex-fill">
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100" style="border: 1px solid var(--danger-color);">
                                 <i class="fas fa-times me-1"></i> Remove
                             </button>
                         </form>
