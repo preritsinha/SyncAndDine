@@ -20,7 +20,7 @@
 
 <div class="alert alert-success glass-effect">
     <h4><i class="fas fa-check-circle me-2"></i> Selection Complete!</h4>
-    <p class="mb-0 text-white">You have selected <strong>{{ total_count }}</strong> restaurants. Your selections are saved and ready to explore!</p>
+    <p class="mb-0">You have selected <strong>{{ total_count }}</strong> restaurants. Your selections are saved and ready to explore!</p>
 </div>
 
 {% if restaurants %}
@@ -82,7 +82,7 @@
     <div class="card glass-effect">
         <div class="card-body">
             <h5>What's Next?</h5>
-            <p class="text-white">Your restaurant selections are saved! You can:</p>
+            <p>Your restaurant selections are saved! You can:</p>
             <div class="d-flex gap-2 justify-content-center flex-wrap">
                 <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i> Add More Restaurants

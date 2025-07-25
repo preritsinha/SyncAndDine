@@ -1006,6 +1006,22 @@ body.dark-mode .autocomplete-item:hover {
     color: var(--text-primary);
 }
 
+/* Alert Theme Support */
+.alert {
+    color: var(--text-primary);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+}
+
+.alert h4, .alert h5, .alert p {
+    color: var(--text-primary) !important;
+}
+
+/* Card Text Theme Support */
+.card h5, .card p {
+    color: var(--text-primary) !important;
+}
+
 .form-control:focus, .form-select:focus {
     background: var(--background-primary) !important;
     border-color: var(--primary-color);
