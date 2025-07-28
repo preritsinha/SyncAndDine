@@ -61,6 +61,11 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="window.featureTour.showTour(); return false;" title="Take a tour">
+                            <i class="fas fa-question fa-lg"></i>
+                        </a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-bell fa-lg"></i>
@@ -206,6 +211,7 @@
     <script src="{{ url_for('static', filename='js/restaurant-actions.js') }}"></script>
     <script src="{{ url_for('static', filename='js/flash-notifications.js') }}"></script>
     <script src="{{ url_for('static', filename='js/restaurant-like.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tour-system.js') }}"></script>
     
     {% block scripts %}{% endblock %}
 </body>
