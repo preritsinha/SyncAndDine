@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show loading state
             button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+            button.innerHTML = 'Loading...';
             
             // Send AJAX request
             fetch(form.action, {

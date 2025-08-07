@@ -1085,6 +1085,63 @@ a.navbar-brand.custom-logo {
     box-shadow: 0 2px 8px rgba(255, 140, 66, 0.3) !important;
 }
 
+/* ===== RESTAURANT CARD BUTTONS ===== */
+.restaurant-card .btn {
+    border: 1px solid !important;
+    background: transparent !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+.restaurant-card .btn-outline-primary {
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+    background: transparent !important;
+}
+
+.restaurant-card .btn-outline-primary:hover {
+    background: var(--primary-color) !important;
+    color: white !important;
+    border-color: var(--primary-color) !important;
+}
+
+.restaurant-card .btn-outline-success {
+    border-color: var(--success-color) !important;
+    color: var(--success-color) !important;
+    background: transparent !important;
+}
+
+.restaurant-card .btn-outline-success:hover {
+    background: var(--success-color) !important;
+    color: white !important;
+    border-color: var(--success-color) !important;
+}
+
+.restaurant-card .btn-outline-danger {
+    border-color: var(--danger-color) !important;
+    color: var(--danger-color) !important;
+    background: transparent !important;
+}
+
+.restaurant-card .btn-outline-danger:hover {
+    background: var(--danger-color) !important;
+    color: white !important;
+    border-color: var(--danger-color) !important;
+}
+
+.restaurant-card .btn-outline-secondary {
+    border-color: var(--text-secondary) !important;
+    color: var(--text-secondary) !important;
+    background: transparent !important;
+}
+
+.restaurant-card .btn-outline-secondary:hover {
+    background: var(--text-secondary) !important;
+    color: white !important;
+    border-color: var(--text-secondary) !important;
+}
+
 /* ===== SEARCH CONNECT BUTTON ===== */
 .search-connect-btn {
     min-width: 90px !important;

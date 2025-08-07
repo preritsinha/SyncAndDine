@@ -111,6 +111,10 @@ html[data-theme="dark"] #mainNavbar .nav-link {
         border-radius: 6px !important;
     }
     
+    .restaurant-card .btn {
+        font-size: 0.85rem !important;
+    }
+    
     .d-flex.gap-3 {
         flex-direction: column;
         gap: 0.5rem !important;
