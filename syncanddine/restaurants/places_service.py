@@ -17,6 +17,8 @@ Version: 2.0 - Production Ready
 import requests
 import os
 from typing import List, Dict, Optional
+import re
+from difflib import SequenceMatcher
 
 class GooglePlacesService:
     """
@@ -34,13 +36,27 @@ class GooglePlacesService:
         if not self.api_key:
             raise ValueError("Google Places API key not found in environment variables")
     
-    def search_restaurants(self, lat: float = None, lon: float = None, city: str = None, radius: int = 10000) -> List[Dict]:
+    def search_restaurants(self, lat: float = None, lon: float = None, city: str = None, radius: int = 10000, query: str = None) -> List[Dict]:
         """Search restaurants using Google Places API with pagination"""
         all_restaurants = []
         next_page_token = None
         
         for page in range(10):  # Get up to 200 results (10 pages × 20 results)
-            if city:
+            if query:
+                # Use text search for specific queries
+                search_query = f'{query} restaurants'
+                if city:
+                    search_query += f' in {city}'
+                params = {
+                    'query': search_query,
+                    'type': 'restaurant',
+                    'key': self.api_key
+                }
+                if lat and lon:
+                    params['location'] = f"{lat},{lon}"
+                    params['radius'] = radius
+                endpoint = f"{self.base_url}/textsearch/json"
+            elif city:
                 params = {
                     'query': f'restaurants in {city}',
                     'type': 'restaurant',
@@ -64,7 +80,13 @@ class GooglePlacesService:
                 if response.status_code == 200:
                     data = response.json()
                     results = data.get('results', [])
-                    all_restaurants.extend([self._format_restaurant(r) for r in results])
+                    formatted_restaurants = [self._format_restaurant(r) for r in results]
+                    
+                    # Apply similarity filtering if query provided
+                    if query:
+                        formatted_restaurants = self._filter_by_similarity(formatted_restaurants, query)
+                    
+                    all_restaurants.extend(formatted_restaurants)
                     
                     next_page_token = data.get('next_page_token')
                     if not next_page_token:
@@ -166,3 +188,47 @@ class GooglePlacesService:
             print(f"Google Places API error: {e}")
         
         return None
+    
+    def _filter_by_similarity(self, restaurants: List[Dict], query: str) -> List[Dict]:
+        """Filter restaurants based on similarity to user query"""
+        if not query:
+            return restaurants
+        
+        query_lower = query.lower().strip()
+        filtered_restaurants = []
+        
+        for restaurant in restaurants:
+            # Get restaurant details for better matching
+            details = self.get_restaurant_details(restaurant['google_place_id'])
+            
+            # Combine name, cuisine, and location for matching
+            search_text = f"{restaurant['name']} {restaurant['cuisine_type']} {restaurant['location']}".lower()
+            
+            # Calculate similarity score
+            similarity = self._calculate_similarity(query_lower, search_text)
+            
+            # Include if similarity is above threshold (0.3 = 30% match)
+            if similarity > 0.3 or any(word in search_text for word in query_lower.split()):
+                restaurant['similarity_score'] = similarity
+                filtered_restaurants.append(restaurant)
+        
+        # Sort by similarity score (highest first)
+        filtered_restaurants.sort(key=lambda x: x.get('similarity_score', 0), reverse=True)
+        
+        return filtered_restaurants
+    
+    def _calculate_similarity(self, query: str, text: str) -> float:
+        """Calculate similarity between query and text using multiple methods"""
+        # Method 1: Direct word matching
+        query_words = set(query.split())
+        text_words = set(text.split())
+        word_match = len(query_words.intersection(text_words)) / len(query_words) if query_words else 0
+        
+        # Method 2: Sequence matching
+        sequence_match = SequenceMatcher(None, query, text).ratio()
+        
+        # Method 3: Substring matching
+        substring_match = 1.0 if query in text else 0.0
+        
+        # Weighted combination
+        return (word_match * 0.5) + (sequence_match * 0.3) + (substring_match * 0.2)

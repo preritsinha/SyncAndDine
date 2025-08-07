@@ -21,10 +21,10 @@
                 </div>
                 <div class="card-body">
                     <form method="POST" action="{{ url_for('social.search_connections') }}">
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" placeholder="Enter username" name="username" required>
-                            <button class="btn btn-primary" type="submit">
-                                <i class="fas fa-search me-2"></i> Search
+                        <div class="d-flex gap-2 mb-3 align-items-stretch">
+                            <input type="text" class="form-control flex-fill" placeholder="Search by username" name="username" required>
+                            <button class="btn btn-primary search-connect-btn" type="submit">
+                                <i class="fas fa-search me-1"></i> Connect
                             </button>
                         </div>
                     </form>

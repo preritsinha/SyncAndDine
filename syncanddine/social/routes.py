@@ -2,7 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from syncanddine import db
 from syncanddine.models.user import User, Group, group_members
+from datetime import datetime, timedelta
 import uuid
+import json
 
 social = Blueprint('social', __name__)
 
@@ -60,14 +62,13 @@ def add_connection(user_id):
         else:
             current_user.add_friend(user)
             
-            # Create notification for the added user
+            # Create unique notification for the added user
             from syncanddine.models.message import Message
-            notification = Message(
+            Message.create_unique_notification(
                 sender_id=current_user.id,
                 recipient_id=user_id,
                 content=f'{current_user.username} added you as a connection!'
             )
-            db.session.add(notification)
             db.session.commit()
             
             flash(f'You are now friends with {user.username}!', 'success')
@@ -113,26 +114,33 @@ def my_groups():
 def create_group():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
+        result_email = request.form.get('result_email', '').strip()
+        time_preset = request.form.get('time_preset', '24')
+        
+        if time_preset == 'custom':
+            deadline_hours = request.form.get('deadline_hours', 24, type=int)
+            deadline_minutes = request.form.get('deadline_minutes', 0, type=int)
+        else:
+            deadline_hours = int(time_preset)
+            deadline_minutes = 0
         
         if not name:
             flash('Group name is required.', 'danger')
             return redirect(url_for('social.create_group'))
         
-        if len(name) > 100:
-            flash('Group name must be less than 100 characters.', 'danger')
+        if not result_email:
+            flash('Results email is required.', 'danger')
             return redirect(url_for('social.create_group'))
         
-        if len(name) < 2:
-            flash('Group name must be at least 2 characters.', 'danger')
+        if '@' not in result_email or '.' not in result_email:
+            flash('Please enter a valid email address.', 'danger')
             return redirect(url_for('social.create_group'))
         
-        # Check for duplicate group names for current user
-        existing_group = Group.query.filter_by(owner_id=current_user.id, name=name).first()
-        if existing_group:
-            flash('You already have a group with this name.', 'warning')
-            return redirect(url_for('social.create_group'))
+        # Calculate deadline
+        from datetime import datetime, timedelta
+        deadline = datetime.utcnow() + timedelta(hours=deadline_hours, minutes=deadline_minutes)
         
-        # Generate a unique share code
+        # Generate unique share code
         max_attempts = 5
         for attempt in range(max_attempts):
             share_code = str(uuid.uuid4())[:8].upper()
@@ -143,17 +151,18 @@ def create_group():
             flash('Unable to generate unique group code. Please try again.', 'danger')
             return redirect(url_for('social.create_group'))
         
-        group = Group(name=name, owner_id=current_user.id, share_code=share_code)
+        group = Group(
+            name=name, 
+            owner_id=current_user.id, 
+            share_code=share_code,
+            result_email=result_email,
+            selection_deadline=deadline
+        )
         group.members.append(current_user)
         
-        # Add selected members to the group
+        # Add selected members
         member_ids = request.form.getlist('members[]')
         if member_ids:
-            # Limit group size (including owner)
-            if len(member_ids) >= 10:
-                flash('Groups cannot have more than 10 members.', 'danger')
-                return redirect(url_for('social.create_group'))
-            
             for member_id in member_ids:
                 try:
                     user_id = int(member_id)
@@ -161,34 +170,94 @@ def create_group():
                     if user and user != current_user and user not in group.members:
                         group.members.append(user)
                 except (ValueError, TypeError):
-                    continue  # Skip invalid user IDs
-                    
-                    # Create notification for added member
-                    from syncanddine.models.message import Message
-                    notification = Message(
-                        sender_id=current_user.id,
-                        recipient_id=user.id,
-                        content=f'{current_user.username} added you to group "{name}"!'
-                    )
-                    db.session.add(notification)
-        
-        # Set the owner as admin in the association table
-        stmt = group_members.update().where(
-            (group_members.c.user_id == current_user.id) & 
-            (group_members.c.group_id == group.id)
-        ).values(is_admin=True)
+                    continue
         
         db.session.add(group)
         db.session.commit()
         
-        # Execute the update after commit to ensure the group_id exists
-        db.session.execute(stmt)
-        db.session.commit()
-        
-        flash(f'Group "{name}" created successfully!', 'success')
-        return redirect(url_for('social.group_detail', group_id=group.id))
+        flash(f'Group "{name}" created! Now select restaurants from the list.', 'success')
+        return redirect(url_for('restaurants.list_restaurants', group_id=group.id))
     
     return render_template('social/create_group.html', title='Create Group')
+
+@social.route('/groups/<int:group_id>/select-restaurants')
+@login_required
+def select_restaurants(group_id):
+    group = Group.query.get_or_404(group_id)
+    
+    # Only owner can select restaurants
+    if current_user.id != group.owner_id:
+        flash('Only group owner can select restaurants.', 'danger')
+        return redirect(url_for('social.group_detail', group_id=group.id))
+    
+    # Get restaurants from Google Places API
+    from syncanddine.restaurants.places_service import GooglePlacesService
+    places_service = GooglePlacesService()
+    
+    try:
+        restaurants = places_service.search_restaurants(lat=12.9716, lon=77.5946)  # Default Bangalore
+    except Exception as e:
+        flash('Unable to load restaurants. Please try again later.', 'warning')
+        restaurants = []
+    
+    return render_template('social/select_restaurants.html',
+                          title=f'Select Restaurants - {group.name}',
+                          group=group,
+                          restaurants=restaurants)
+
+@social.route('/groups/<int:group_id>/save-selection', methods=['POST'])
+@login_required
+def save_restaurant_selection(group_id):
+    group = Group.query.get_or_404(group_id)
+    
+    if current_user.id != group.owner_id:
+        flash('Only group owner can save restaurant selection.', 'danger')
+        return redirect(url_for('social.group_detail', group_id=group.id))
+    
+    selected_restaurants = request.form.getlist('restaurants[]')
+    
+    if not selected_restaurants:
+        flash('Please select at least one restaurant.', 'warning')
+        return redirect(url_for('social.select_restaurants', group_id=group.id))
+    
+    if len(selected_restaurants) > 20:
+        flash('Please select maximum 20 restaurants.', 'warning')
+        return redirect(url_for('social.select_restaurants', group_id=group.id))
+    
+    # Save selected restaurants
+    group.set_preselected_restaurants(selected_restaurants)
+    db.session.commit()
+    
+    flash(f'Selected {len(selected_restaurants)} restaurants! Share the group link now.', 'success')
+    return redirect(url_for('social.group_detail', group_id=group.id))
+
+@social.route('/join/<share_code>')
+def join_group_public(share_code):
+    """Public join route that handles both logged in and new users"""
+    group = Group.query.filter_by(share_code=share_code).first()
+    
+    if not group:
+        flash('Invalid group link.', 'danger')
+        return redirect(url_for('main.index'))
+    
+    # Check if group has expired
+    if group.is_expired():
+        flash('This group selection has expired.', 'warning')
+        return redirect(url_for('main.index'))
+    
+    # If user is logged in, add them to group
+    if current_user.is_authenticated:
+        if current_user in group.members:
+            flash(f'You are already in {group.name}.', 'info')
+        else:
+            group.members.append(current_user)
+            db.session.commit()
+            flash(f'Welcome to {group.name}!', 'success')
+        
+        return redirect(url_for('restaurants.list_restaurants', group_id=group.id))
+    
+    # For new users, redirect to registration with group code
+    return redirect(url_for('auth.register', join_code=share_code))
 
 @social.route('/groups/<int:group_id>')
 @login_required
@@ -218,32 +287,8 @@ def group_detail(group_id):
 @social.route('/groups/join/<share_code>')
 @login_required
 def join_group(share_code):
-    group = Group.query.filter_by(share_code=share_code).first()
-    
-    if not group:
-        flash('Invalid group code.', 'danger')
-        return redirect(url_for('social.my_groups'))
-    
-    if current_user in group.members:
-        flash(f'You are already a member of {group.name}.', 'info')
-    else:
-        group.members.append(current_user)
-        
-        # Notify all existing group members
-        from syncanddine.models.message import Message
-        for member in group.members:
-            if member != current_user:
-                notification = Message(
-                    sender_id=current_user.id,
-                    recipient_id=member.id,
-                    content=f'{current_user.username} joined group "{group.name}"!'
-                )
-                db.session.add(notification)
-        
-        db.session.commit()
-        flash(f'You have joined {group.name}!', 'success')
-    
-    return redirect(url_for('social.group_detail', group_id=group.id))
+    """Legacy join route for logged in users"""
+    return redirect(url_for('social.join_group_public', share_code=share_code))
 
 @social.route('/groups/<int:group_id>/add_member', methods=['POST'])
 @login_required
@@ -424,7 +469,7 @@ def leave_group(group_id):
     group.members.remove(current_user)
     
     # Check if group becomes empty
-    if len(group.members) == 0:
+    if group.members.count() == 0:
         # Delete empty group
         from sqlalchemy import text
         db.session.execute(text("DELETE FROM restaurant_like WHERE group_id = :group_id"), {'group_id': group.id})

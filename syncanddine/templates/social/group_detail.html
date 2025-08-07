@@ -110,6 +110,27 @@
                 <h5 class="mb-0">Group Info</h5>
             </div>
             <div class="card-body">
+                {% if group.selection_deadline %}
+                <div class="alert alert-info mb-3">
+                    <h6><i class="fas fa-clock me-2"></i>Selection Deadline</h6>
+                    <div id="countdown" class="fw-bold"></div>
+                    <small class="text-muted">{{ group.selection_deadline.strftime('%Y-%m-%d %H:%M UTC') }}</small>
+                </div>
+                {% endif %}
+                
+                {% if group.preselected_restaurants %}
+                <p class="text-muted small">
+                    <strong>Preselected Restaurants:</strong> {{ group.get_preselected_restaurants()|length }}
+                </p>
+                {% endif %}
+                
+                {% if group.is_expired() %}
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-clock me-2"></i>Selection Period Ended</h6>
+                    <p class="mb-0">Results have been sent to {{ group.result_email }}</p>
+                </div>
+                {% endif %}
+                
                 <p class="text-muted small">
                     <strong>Created on:</strong> {{ group.created_at.strftime('%Y-%m-%d') }}
                 </p>
@@ -121,9 +142,7 @@
                     <a href="{{ url_for('restaurants.group_matches', group_id=group.id) }}" class="btn btn-success">
                         <i class="fas fa-check-circle me-2"></i> View Matches
                     </a>
-                    <a href="{{ url_for('restaurants.swipe_restaurants', group_id=group.id) }}" class="btn btn-primary">
-                        <i class="fas fa-exchange-alt me-2"></i> Swipe Restaurants
-                    </a>
+
                     
                     {% if current_user != group.owner %}
                     <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#leaveGroupModal">
@@ -149,17 +168,52 @@
                 <h5 class="mb-0">Share Group</h5>
             </div>
             <div class="card-body">
-                <p class="text-muted small">Invite friends to join this group by sharing the code:</p>
+                {% if group.preselected_restaurants %}
+                <p class="text-muted small">Share this link for members to select restaurants:</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" value="{{ url_for('social.join_group_public', share_code=group.share_code, _external=True) }}" readonly id="join-link-input">
+                    <button class="btn btn-outline-primary copy-join-link" type="button">Copy</button>
+                </div>
+                {% if group.result_email %}
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-envelope me-2"></i>Results will be sent to: <strong>{{ group.result_email }}</strong>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Please select restaurants first to enable sharing.
+                </div>
+                {% endif %}
+                
+                <hr>
+                <p class="text-muted small">Or share the group code:</p>
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" value="{{ group.share_code }}" readonly id="share-code-input">
                     <button class="btn btn-outline-primary copy-share-code" type="button">Copy</button>
                 </div>
-                <p class="text-muted small">
-                    Friends can join by entering this code in the "Join a Group" section.
-                </p>
             </div>
         </div>
     </div>
+    
+    {% if group.is_expired() and group.results_sent %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Final Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p class="mb-0">Selection period has ended. Detailed results have been sent to <strong>{{ group.result_email }}</strong></p>
+                    </div>
+                    <a href="{{ url_for('restaurants.group_matches', group_id=group.id) }}" class="btn btn-primary">
+                        <i class="fas fa-chart-bar me-2"></i>View Results Summary
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Leave Group Modal (Regular Members) -->
@@ -263,29 +317,56 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Copy share code functionality
-        const copyButtons = document.querySelectorAll('.copy-share-code');
+        // Countdown timer
+        {% if group.selection_deadline %}
+        const deadline = new Date('{{ group.selection_deadline.isoformat() }}Z');
+        const countdownElement = document.getElementById('countdown');
+        
+        function updateCountdown() {
+            const now = new Date();
+            const timeLeft = deadline - now;
+            
+            if (timeLeft <= 0) {
+                countdownElement.innerHTML = '<span class="text-danger">Selection Expired</span>';
+                return;
+            }
+            
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            let display = '';
+            if (days > 0) display += days + 'd ';
+            if (hours > 0) display += hours + 'h ';
+            if (minutes > 0) display += minutes + 'm ';
+            display += seconds + 's';
+            
+            countdownElement.textContent = display + ' remaining';
+        }
+        
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+        {% endif %}
+        
+        // Copy functionality
+        const copyButtons = document.querySelectorAll('.copy-share-code, .copy-join-link');
         copyButtons.forEach(button => {
             button.addEventListener('click', function() {
-                const shareCodeInput = document.getElementById('share-code-input');
-                const shareCode = shareCodeInput ? shareCodeInput.value : document.querySelector('.share-code').textContent;
+                let input;
+                if (button.classList.contains('copy-join-link')) {
+                    input = document.getElementById('join-link-input');
+                } else {
+                    input = document.getElementById('share-code-input');
+                }
                 
-                navigator.clipboard.writeText(shareCode).then(function() {
-                    // Show success message
-                    if (button.innerHTML.includes('Copy')) {
-                        const originalText = button.innerHTML;
-                        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                        
-                        setTimeout(function() {
-                            button.innerHTML = originalText;
-                        }, 2000);
-                    } else {
-                        button.innerHTML = '<i class="fas fa-check"></i>';
-                        
-                        setTimeout(function() {
-                            button.innerHTML = '<i class="fas fa-copy"></i>';
-                        }, 2000);
-                    }
+                navigator.clipboard.writeText(input.value).then(function() {
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    
+                    setTimeout(function() {
+                        button.innerHTML = originalText;
+                    }, 2000);
                 }, function(err) {
                     console.error('Could not copy text: ', err);
                 });

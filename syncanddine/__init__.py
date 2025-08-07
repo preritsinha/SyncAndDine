@@ -45,8 +45,10 @@ def create_app():
     app.register_blueprint(location_api)
     app.register_blueprint(notification_api)
     
-    # Create database tables
+    # Create database tables only if they don't exist
     with app.app_context():
-        db.create_all()
+        # Only create tables if database is empty (first run)
+        if not db.engine.dialect.has_table(db.engine.connect(), 'user'):
+            db.create_all()
     
     return app

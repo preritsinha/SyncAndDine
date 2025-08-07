@@ -4,8 +4,8 @@
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-header">
-            <h1>Welcome!</h1>
-            <p>Sign in to get started</p>
+            <h1>Welcome back!</h1>
+            <p>Ready to find your next great meal?</p>
         </div>
         <div class="auth-body">
             <form method="POST" action="">
@@ -13,27 +13,27 @@
                 <div class="mb-3">
                     {{ form.email.label(class="form-label") }}
                     {% if form.email.errors %}
-                        {{ form.email(class="form-control is-invalid", placeholder="Enter username or email", autocomplete="off") }}
+                        {{ form.email(class="form-control is-invalid", placeholder="Your email address", autocomplete="off") }}
                         <div class="invalid-feedback">
                             {% for error in form.email.errors %}
                                 <span>{{ error }}</span>
                             {% endfor %}
                         </div>
                     {% else %}
-                        {{ form.email(class="form-control", placeholder="Enter username or email", autocomplete="off") }}
+                        {{ form.email(class="form-control", placeholder="Your email address", autocomplete="off") }}
                     {% endif %}
                 </div>
                 <div class="mb-3">
                     {{ form.password.label(class="form-label") }}
                     {% if form.password.errors %}
-                        {{ form.password(class="form-control is-invalid", placeholder="Enter your Password", autocomplete="off") }}
+                        {{ form.password(class="form-control is-invalid", placeholder="Your password", autocomplete="off") }}
                         <div class="invalid-feedback">
                             {% for error in form.password.errors %}
                                 <span>{{ error }}</span>
                             {% endfor %}
                         </div>
                     {% else %}
-                        {{ form.password(class="form-control", placeholder="Enter your Password", autocomplete="off") }}
+                        {{ form.password(class="form-control", placeholder="Your password", autocomplete="off") }}
                     {% endif %}
                 </div>
                 <div class="mb-3 d-flex justify-content-between align-items-center">
@@ -51,7 +51,7 @@
 
         </div>
         <div class="auth-footer">
-            <p class="mb-0">Don't have an account? <a href="{{ url_for('auth.register') }}" class="text-decoration-none">Sign up</a></p>
+            <p class="mb-0">New to SyncAndDine? <a href="{{ url_for('auth.register') }}" class="text-decoration-none">Join us today</a></p>
         </div>
     </div>
 </div>

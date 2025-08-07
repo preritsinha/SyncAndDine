@@ -68,8 +68,8 @@
             <h3>Please wait while we sync your matches with your friends</h3>
             <p>No matches found yet. Keep swiping on restaurants to find matches with your group!</p>
             <div class="mt-3">
-                <a href="{{ url_for('restaurants.swipe_restaurants', group_id=group.id) }}" class="btn btn-primary me-2">
-                    <i class="fas fa-exchange-alt me-2"></i> Swipe Restaurants
+                <a href="{{ url_for('social.group_detail', group_id=group.id) }}" class="btn btn-primary me-2">
+                    <i class="fas fa-users me-2"></i> Back to Group
                 </a>
                 <a href="{{ url_for('restaurants.list_restaurants', group_id=group.id) }}" class="btn btn-outline-primary">
                     <i class="fas fa-th-large me-2"></i> Browse Restaurants

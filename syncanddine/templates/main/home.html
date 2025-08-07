@@ -23,7 +23,7 @@
             <div class="card-body">
                 <form action="{{ url_for('social.search_connections') }}" method="POST" class="mb-3">
                     <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Search by username" name="username" required>
+                        <input type="text" class="form-control" placeholder="Search by username" name="username" autocomplete="off" required>
                         <button class="btn btn-primary" type="submit">Connect</button>
                     </div>
                 </form>
@@ -85,8 +85,8 @@
                     <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-primary">
                         <i class="fas fa-utensils me-2"></i> Browse Restaurants
                     </a>
-                    <a href="{{ url_for('restaurants.swipe_restaurants') }}" class="btn btn-primary">
-                        <i class="fas fa-exchange-alt me-2"></i> Swipe Restaurants
+                    <a href="{{ url_for('social.my_groups') }}" class="btn btn-primary">
+                        <i class="fas fa-users me-2"></i> My Groups
                     </a>
                     <a href="{{ url_for('social.connections') }}" class="btn btn-primary">
                         <i class="fas fa-user-friends me-2"></i> My Connections

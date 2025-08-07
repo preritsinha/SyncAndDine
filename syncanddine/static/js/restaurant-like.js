@@ -9,11 +9,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const form = e.target;
             const button = form.querySelector('button');
-            const originalText = button.textContent;
+            const card = form.closest('.restaurant-card').parentElement;
             
             // Show loading state
             button.disabled = true;
-            button.textContent = '...';
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
             
             // Send AJAX request
             fetch(form.action, {
@@ -25,20 +25,32 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    // Check if restaurant was liked or disliked
                     if (data.action === 'liked') {
-                        button.classList.add('liked');
-                        button.textContent = 'Liked';
-                    } else {
-                        button.classList.remove('liked');
-                        button.textContent = 'Like';
+                        // Update button to "Liked" state
+                        button.innerHTML = 'Liked';
+                        
+                        // Fade out the entire card
+                        setTimeout(() => {
+                            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                            card.style.opacity = '0';
+                            card.style.transform = 'scale(0.9)';
+                            
+                            setTimeout(() => {
+                                card.remove();
+                            }, 500);
+                        }, 800); // Wait 800ms to show "Liked" state
+                        
+                    } else if (data.action === 'disliked') {
+                        // If user unlikes, revert to "Like" state
+                        button.className = 'btn btn-sm w-100 btn-outline-primary';
+                        button.innerHTML = '<i class="fas fa-heart me-1"></i>Like';
                     }
                 } else {
-                    button.textContent = originalText;
+                    alert('Error processing request');
                 }
             })
             .catch(error => {
-                button.textContent = originalText;
+                alert('Error processing request');
             })
             .finally(() => {
                 button.disabled = false;

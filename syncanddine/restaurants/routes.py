@@ -74,9 +74,9 @@ def list_restaurants():
     places_service = GooglePlacesService()
     try:
         if location_query:
-            restaurants = places_service.search_restaurants(city=location_query)
+            restaurants = places_service.search_restaurants(city=location_query, query=restaurant_name)
         else:
-            restaurants = places_service.search_restaurants(lat, lon)
+            restaurants = places_service.search_restaurants(lat, lon, query=restaurant_name)
     except Exception as e:
         flash('Unable to load restaurants at the moment. Please try again later.', 'warning')
         restaurants = []
@@ -88,8 +88,7 @@ def list_restaurants():
         restaurants = [r for r in restaurants if cuisine.lower() in r['cuisine_type'].lower()]
     if price_range:
         restaurants = [r for r in restaurants if r['price_range'] == price_range]
-    if restaurant_name:
-        restaurants = [r for r in restaurants if restaurant_name.lower() in r['name'].lower()]
+    # Remove redundant name filtering since it's now handled by similarity search
     
     # Filter for personal favorites if requested
     liked_only = request.args.get('liked_only', False)
@@ -108,6 +107,26 @@ def list_restaurants():
     # Get unique cuisines for filter dropdown
     cuisines = list(set([r['cuisine_type'] for r in restaurants if r['cuisine_type']]))
     
+    # Get user preferences for each restaurant
+    user_preferences = {}
+    leaderboard = []
+    
+    if restaurants:
+        from sqlalchemy import text
+        restaurant_ids = [r['google_place_id'] for r in restaurants]
+        placeholders = ','.join([':id' + str(i) for i in range(len(restaurant_ids))])
+        params = {'user_id': current_user.id, 'group_id': group_id if group_id > 0 else None}
+        for i, rid in enumerate(restaurant_ids):
+            params[f'id{i}'] = rid
+        
+        preferences = db.session.execute(
+            text(f"SELECT restaurant_google_id, liked FROM restaurant_like WHERE user_id = :user_id AND group_id = :group_id AND restaurant_google_id IN ({placeholders})"),
+            params
+        ).fetchall()
+        
+        for pref in preferences:
+            user_preferences[pref[0]] = 'liked' if pref[1] else 'disliked'
+    
     # Get user's groups
     owned_group_ids = [g.id for g in current_user.owned_groups]
     member_groups = [g for g in current_user.groups if g.id not in owned_group_ids]
@@ -119,15 +138,11 @@ def list_restaurants():
                           group=group,
                           is_admin=is_admin,
                           cuisines=cuisines,
-                          user_groups=user_groups)
+                          user_groups=user_groups,
+                          user_preferences=user_preferences,
+                          leaderboard=leaderboard)
 
-@restaurants.route('/restaurants/swipe')
-@login_required
-def swipe_restaurants():
-    # Redirect swipe to grid view - no more single card swiping
-    group_id = request.args.get('group_id', 0, type=int)
-    # flash('Browse restaurants and click like on your favorites!', 'info')
-    return redirect(url_for('restaurants.list_restaurants', group_id=group_id))
+
 
 @restaurants.route('/restaurants/<restaurant_id>')
 @login_required
@@ -255,10 +270,15 @@ def finish_personal_selection():
     restaurant_details = []
     
     try:
+        # Track unique restaurant IDs to avoid duplicates
+        seen_restaurants = set()
+        
         for like in liked_restaurants:
-            details = places_service.get_restaurant_details(like.restaurant_google_id)
-            if details:
-                restaurant_details.append(details)
+            if like.restaurant_google_id not in seen_restaurants:
+                details = places_service.get_restaurant_details(like.restaurant_google_id)
+                if details:
+                    restaurant_details.append(details)
+                    seen_restaurants.add(like.restaurant_google_id)
     except Exception as e:
         flash('Some restaurant details could not be loaded.', 'warning')
     

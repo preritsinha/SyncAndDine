@@ -1,10 +1,10 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-8 mx-auto">
-            <div class="restaurant-card glass-effect">
+<div class="container" style="padding-top: 1rem; height: calc(100vh - 140px); display: flex; flex-direction: column;">
+    <div class="row flex-grow-1">
+        <div class="col-md-8 mx-auto d-flex">
+            <div class="restaurant-card glass-effect" style="flex-grow: 1; display: flex; flex-direction: column;">
                 {% if restaurant.photos and restaurant.photos|length > 1 %}
                 <div id="restaurantCarousel" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-indicators">
@@ -16,7 +16,7 @@
                     <div class="carousel-inner">
                         {% for photo in restaurant.photos %}
                         <div class="carousel-item {% if loop.first %}active{% endif %}">
-                            <img src="{{ photo }}" class="d-block w-100" alt="{{ restaurant.name }}" style="height: 300px; object-fit: cover;">
+                            <img src="{{ photo }}" class="d-block w-100" alt="{{ restaurant.name }}" style="height: 200px; object-fit: cover;">
                         </div>
                         {% endfor %}
                     </div>
@@ -31,10 +31,10 @@
                 <img src="{{ restaurant.image_url or 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop' }}" 
                      class="card-img-top" 
                      alt="{{ restaurant.name }}"
-                     style="height: 300px; object-fit: cover;">
+                     style="height: 200px; object-fit: cover;">
                 {% endif %}
                 
-                <div class="card-body p-4">
+                <div class="card-body p-4" style="flex-grow: 1; display: flex; flex-direction: column;">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <h1 class="card-title">{{ restaurant.name }}</h1>
                         <div class="rating-badge">
@@ -87,7 +87,7 @@
                     </p>
                     {% endif %}
                     
-                    <div class="d-flex gap-3 mt-4">
+                    <div class="d-flex gap-3 mt-auto pt-4">
                         <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.google_place_id, group_id=0) }}" method="POST" class="flex-fill">
                             <button type="submit" class="btn btn-success w-100">
                                 <i class="fas fa-heart me-2"></i>Like This Place

@@ -4,6 +4,10 @@ from syncanddine import db
 from syncanddine.models.user import User
 from syncanddine.auth.forms import RegistrationForm, LoginForm, ForgotPasswordForm, ResetPasswordForm
 from flask_jwt_extended import create_access_token
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
 
 auth = Blueprint('auth', __name__)
 
@@ -55,9 +59,11 @@ def forgot_password():
     form = ForgotPasswordForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-        # Here you would send an email with reset instructions
-        # For now, we'll just flash a message
-        flash('Password reset instructions have been sent to your email.', 'info')
+        if user:
+            token = user.get_reset_token()
+            send_reset_email(user, token)
+        # Always show success message for security
+        flash('If an account with that email exists, password reset instructions have been sent.', 'info')
         return redirect(url_for('auth.login'))
     
     return render_template('auth/forgot_password.html', title='Forgot Password', form=form)
@@ -67,11 +73,15 @@ def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
     
-    # Here you would validate the token and get the user
-    # For now, we'll just show the form
+    user = User.verify_reset_token(token)
+    if not user:
+        flash('Invalid or expired reset token.', 'warning')
+        return redirect(url_for('auth.forgot_password'))
+    
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        # Update the user's password
+        user.set_password(form.password.data)
+        db.session.commit()
         flash('Your password has been updated! You can now log in.', 'success')
         return redirect(url_for('auth.login'))
     
@@ -116,3 +126,68 @@ def api_register():
     
     access_token = create_access_token(identity=user.id)
     return jsonify({'message': 'User registered successfully', 'access_token': access_token}), 201
+
+def send_reset_email(user, token):
+    """Send password reset email"""
+    try:
+        # Email configuration from environment variables
+        SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+        SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
+        EMAIL_USER = os.getenv('EMAIL_USER')
+        EMAIL_PASS = os.getenv('EMAIL_PASS')
+        
+        if not EMAIL_USER or not EMAIL_PASS:
+            print("Email credentials not configured")
+            return False
+        
+        reset_url = url_for('auth.reset_password', token=token, _external=True)
+        
+        # Create HTML email
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #FF6B35; padding: 20px; text-align: center;">
+                <h1 style="color: white; margin: 0;">🍽️ SyncAndDine</h1>
+            </div>
+            
+            <div style="padding: 30px; background: #f8f9fa;">
+                <h2 style="color: #333;">Password Reset Request</h2>
+                <p>Hello {user.username},</p>
+                <p>You requested a password reset for your SyncAndDine account.</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{reset_url}" style="background: #FF6B35; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">Reset Password</a>
+                </div>
+                
+                <p style="color: #666; font-size: 14px;">This link will expire in 30 minutes.</p>
+                <p style="color: #666; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+            </div>
+            
+            <div style="background: #333; color: white; padding: 15px; text-align: center; font-size: 12px;">
+                <p>© 2024 SyncAndDine. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Create message
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'SyncAndDine - Password Reset Request'
+        msg['From'] = EMAIL_USER
+        msg['To'] = user.email
+        
+        # Add HTML content
+        html_part = MIMEText(html_content, 'html')
+        msg.attach(html_part)
+        
+        # Send email
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_USER, EMAIL_PASS)
+        server.send_message(msg)
+        server.quit()
+        
+        return True
+    except Exception as e:
+        print(f"Failed to send reset email: {str(e)}")
+        return False

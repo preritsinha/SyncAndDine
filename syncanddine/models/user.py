@@ -1,6 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
+from flask import current_app
 from syncanddine import db, login_manager
 
 # Association table for user friendships
@@ -59,6 +61,21 @@ class User(db.Model, UserMixin):
     def is_friend(self, user):
         return self.friends.filter(friendships.c.friend_id == user.id).count() > 0
     
+    def get_reset_token(self, expires_sec=1800):
+        """Generate password reset token (30 minutes expiry)"""
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id})
+    
+    @staticmethod
+    def verify_reset_token(token, expires_sec=1800):
+        """Verify password reset token"""
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token, max_age=expires_sec)
+        except:
+            return None
+        return User.query.get(data['user_id'])
+    
     def __repr__(self):
         return f'<User {self.username}>'
 
@@ -72,6 +89,10 @@ class Group(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     share_code = db.Column(db.String(20), unique=True)
+    result_email = db.Column(db.String(120))
+    selection_deadline = db.Column(db.DateTime)
+    results_sent = db.Column(db.Boolean, default=False)
+    preselected_restaurants = db.Column(db.Text)  # JSON string of restaurant IDs
     
     # Relationships
     members = db.relationship('User', secondary=group_members, lazy='dynamic',
@@ -91,6 +112,34 @@ class Group(db.Model):
         ).first()
         
         return member is not None
+    
+    def is_expired(self):
+        """Check if group selection deadline has passed"""
+        if not self.selection_deadline:
+            return False
+        return datetime.utcnow() > self.selection_deadline
+    
+    def time_remaining(self):
+        """Get time remaining until deadline"""
+        if not self.selection_deadline:
+            return None
+        remaining = self.selection_deadline - datetime.utcnow()
+        return remaining if remaining.total_seconds() > 0 else None
+    
+    def get_preselected_restaurants(self):
+        """Get list of preselected restaurant IDs"""
+        if not self.preselected_restaurants:
+            return []
+        import json
+        try:
+            return json.loads(self.preselected_restaurants)
+        except:
+            return []
+    
+    def set_preselected_restaurants(self, restaurant_ids):
+        """Set preselected restaurant IDs as JSON string"""
+        import json
+        self.preselected_restaurants = json.dumps(restaurant_ids)
     
     def __repr__(self):
         return f'<Group {self.name}>'

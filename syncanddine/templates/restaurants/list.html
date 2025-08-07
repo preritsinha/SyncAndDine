@@ -2,21 +2,11 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Restaurants</h1>
+    <h1>Discover Great Food</h1>
     <div>
         <button id="getLocationBtn" class="btn btn-outline-success me-2" style="display: none;">
             <i class="fas fa-map-marker-alt me-2"></i> Enable Location
         </button>
-        
-        <button class="btn btn-primary d-md-none filter-toggle">
-            <i class="fas fa-filter me-2"></i> View Filters
-        </button>
-        
-        {% if request.args %}
-        <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-outline-primary ms-2">
-            <i class="fas fa-times me-2"></i> Clear Filters
-        </a>
-        {% endif %}
     </div>
 </div>
 
@@ -25,18 +15,18 @@
     <div class="col-lg-6 col-md-8 col-12">
         <div class="card glass-effect">
             <div class="card-header">
-                <h5 class="mb-0">Filter for Group</h5>
+                <h5 class="mb-0">Who's joining you?</h5>
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ url_for('restaurants.list_restaurants') }}">
-                    <div class="input-group">
-                        <select class="form-select" name="group_id">
-                            <option value="" {% if not request.args.get('group_id') %}selected{% endif %}>Personal Dining (Just Me)</option>
+                    <div class="d-flex gap-2">
+                        <select class="form-select flex-fill" name="group_id">
+                            <option value="" {% if not request.args.get('group_id') %}selected{% endif %}>Just me</option>
                             {% for g in user_groups %}
                                 <option value="{{ g.id }}" {% if request.args.get('group_id')|int == g.id %}selected{% endif %}>{{ g.name }}</option>
                             {% endfor %}
                         </select>
-                        <button class="btn btn-primary" type="submit">Apply</button>
+                        <button class="btn btn-primary" type="submit" style="min-width: 100px;">Select</button>
                     </div>
                 </form>
             </div>
@@ -44,67 +34,98 @@
     </div>
 </div>
 
-<!-- Filter Section -->
+<!-- Professional Filter Section -->
 <div class="filter-section glass-effect d-none d-md-block mb-4">
     <form method="GET" action="{{ url_for('restaurants.list_restaurants') }}">
         {% if request.args.get('group_id') %}
         <input type="hidden" name="group_id" value="{{ request.args.get('group_id') }}">
         {% endif %}
-        <div class="row">
-            <div class="col-12 mb-3">
-                <h5>Find restaurants near you</h5>
+        
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h5 class="mb-0">Find your perfect meal</h5>
+                <p class="text-muted mb-0">Use filters below to discover restaurants that match your taste</p>
             </div>
-            <div class="col-12 mb-3">
-                <label for="restaurant_name" class="form-label">Restaurant Name (Optional)</label>
-                <input type="text" class="form-control" id="restaurant_name" name="restaurant_name" 
-                       placeholder="Search for a specific restaurant..." 
+        </div>
+        
+        <!-- Search Bar -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <label for="restaurant_name" class="form-label fw-semibold">Looking for something specific?</label>
+                <input type="text" class="form-control form-control-lg" id="restaurant_name" name="restaurant_name" 
+                       placeholder="Try 'Pizza Palace', 'Sushi Bar', or 'Italian cuisine'..." 
                        value="{{ request.args.get('restaurant_name', '') }}" autocomplete="off">
-                <small class="text-muted">Leave empty to browse all restaurants</small>
+                <small class="text-muted">Search by restaurant name, cuisine type, or food keywords</small>
             </div>
-            <div class="col-lg-3 col-md-6 col-12 mb-3">
-                <label for="city" class="form-label">City</label>
-                <select class="form-select searchable-select" id="city" name="city">
-                    <option value="">Current Location</option>
+        </div>
+        
+        <!-- Location Filters -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <label for="city" class="form-label fw-semibold">City</label>
+                <select class="form-select" id="city" name="city">
+                    <option value="">📍 Current Location</option>
                 </select>
-                <small class="text-muted d-block" style="height: 1.2em;">Search and select city</small>
+                <small class="text-muted">Find restaurants in your city</small>
             </div>
-            <div class="col-lg-3 col-md-6 col-12 mb-3">
-                <label for="area" class="form-label">Area</label>
-                <select class="form-select searchable-select" id="area" name="area" disabled>
-                    <option value="">Select city first</option>
+            <div class="col-md-6 mb-3">
+                <label for="area" class="form-label fw-semibold">Area</label>
+                <select class="form-select" id="area" name="area" disabled>
+                    <option value="">Choose a city first</option>
                 </select>
-                <small class="text-muted d-block" style="height: 1.2em;">Search and select area</small>
+                <small class="text-muted">Pick your neighborhood</small>
             </div>
-            <input type="hidden" name="lat" value="{{ request.args.get('lat', '') }}">
-            <input type="hidden" name="lon" value="{{ request.args.get('lon', '') }}">
-            <div class="col-lg-4 col-md-6 col-12 mb-3">
-                <label for="min_rating" class="form-label">Rating</label>
-                <select class="form-select" id="min_rating" name="min_rating">
-                    <option value="0" {% if request.args.get('min_rating', '0') == '0' %}selected{% endif %}>Any</option>
-                    <option value="3" {% if request.args.get('min_rating') == '3' %}selected{% endif %}>3+</option>
-                    <option value="4" {% if request.args.get('min_rating') == '4' %}selected{% endif %}>4+</option>
-                    <option value="4.5" {% if request.args.get('min_rating') == '4.5' %}selected{% endif %}>4.5+</option>
-                </select>
-                <small class="text-muted d-block" style="height: 1.2em;">&nbsp;</small>
-            </div>
-            <div class="col-lg-4 col-md-6 col-12 mb-3">
-                <label for="cuisine" class="form-label">Cuisines</label>
+        </div>
+        
+        <!-- Preference Filters -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <label for="cuisine" class="form-label fw-semibold">Cuisine Type</label>
                 <select class="form-select" id="cuisine" name="cuisine">
-                    <option value="">Any</option>
+                    <option value="">🍽️ Any Cuisine</option>
                     {% for cuisine_type in cuisines %}
                         <option value="{{ cuisine_type }}" {% if request.args.get('cuisine') == cuisine_type %}selected{% endif %}>{{ cuisine_type }}</option>
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-md-4 mb-3">
+                <label for="min_rating" class="form-label fw-semibold">Minimum Rating</label>
+                <select class="form-select" id="min_rating" name="min_rating">
+                    <option value="0" {% if request.args.get('min_rating', '0') == '0' %}selected{% endif %}>⭐ Any Rating</option>
+                    <option value="3" {% if request.args.get('min_rating') == '3' %}selected{% endif %}>⭐⭐⭐ 3+ Stars</option>
+                    <option value="4" {% if request.args.get('min_rating') == '4' %}selected{% endif %}>⭐⭐⭐⭐ 4+ Stars</option>
+                    <option value="4.5" {% if request.args.get('min_rating') == '4.5' %}selected{% endif %}>⭐⭐⭐⭐⭐ 4.5+ Stars</option>
+                </select>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="price_range" class="form-label fw-semibold">Price Range</label>
+                <select class="form-select" id="price_range" name="price_range">
+                    <option value="">💰 Any Price</option>
+                    <option value="$" {% if request.args.get('price_range') == '$' %}selected{% endif %}>💰 Budget ($)</option>
+                    <option value="$$" {% if request.args.get('price_range') == '$$' %}selected{% endif %}>💰💰 Moderate ($$)</option>
+                    <option value="$$$" {% if request.args.get('price_range') == '$$$' %}selected{% endif %}>💰💰💰 Expensive ($$$)</option>
+                    <option value="$$$$" {% if request.args.get('price_range') == '$$$$' %}selected{% endif %}>💰💰💰💰 Fine Dining ($$$$)</option>
+                </select>
+            </div>
         </div>
-        <div class="row mt-2">
+        
+        <!-- Action Buttons -->
+        <div class="row">
             <div class="col-12">
-                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                    <button type="submit" class="btn btn-primary">Apply Filters</button>
-                    <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-outline-secondary">Reset All</a>
+                <div class="d-flex gap-3 justify-content-center">
+                    <button type="submit" class="btn btn-primary btn-lg px-4">
+                        <i class="fas fa-search me-2"></i>Find Restaurants
+                    </button>
+                    <a href="{{ url_for('restaurants.list_restaurants') }}" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="fas fa-refresh me-2"></i>Show All
+                    </a>
                 </div>
             </div>
         </div>
+        
+        <input type="hidden" name="lat" value="{{ request.args.get('lat', '') }}">
+        <input type="hidden" name="lon" value="{{ request.args.get('lon', '') }}">
     </form>
 </div>
 
@@ -113,11 +134,11 @@
 <div class="text-center mb-4">
     {% if request.args.get('group_id') and request.args.get('group_id')|int > 0 %}
         <a href="{{ url_for('restaurants.finish_group_selection', group_id=request.args.get('group_id')) }}" class="btn btn-success btn-lg">
-            Finish Selection
+            See My Picks
         </a>
     {% else %}
         <a href="{{ url_for('restaurants.finish_personal_selection') }}" class="btn btn-success btn-lg">
-            Finish Selection
+            See My Picks
         </a>
     {% endif %}
 </div>
@@ -164,7 +185,7 @@
                         <div class="d-flex gap-2 mt-auto pt-3">
                             <a href="{{ url_for('restaurants.restaurant_detail', restaurant_id=restaurant.google_place_id) }}" class="btn btn-outline-primary btn-sm flex-fill">Details</a>
                             <form action="{{ url_for('restaurants.like_restaurant', restaurant_id=restaurant.google_place_id, group_id=request.args.get('group_id') or 0) }}" method="POST" class="flex-fill like-form">
-                                <button type="submit" class="btn btn-outline-primary btn-sm w-100" title="{% if request.args.get('group_id') %}Add to group favorites{% else %}Add to my favorites{% endif %}">Like</button>
+                                <button type="submit" class="btn btn-outline-primary btn-sm w-100" title="{% if request.args.get('group_id') %}Add to group favorites{% else %}Add to my favorites{% endif %}">❤️ Like</button>
                             </form>
                         </div>
                     </div>
@@ -174,8 +195,8 @@
     {% else %}
         <div class="col-12 text-center mt-5">
             <div class="alert alert-info glass-effect">
-                <h3>No restaurants found</h3>
-                <p>Click "Use My Location" to find restaurants near you!</p>
+                <h3>No restaurants found nearby</h3>
+                <p>Try enabling location or searching in a different area to discover great food!</p>
             </div>
         </div>
     {% endif %}

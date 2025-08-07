@@ -18,7 +18,43 @@
                 <form method="POST" action="{{ url_for('social.create_group') }}">
                     <div class="mb-4">
                         <label for="name" class="form-label">Group Name</label>
-                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter a Group Name" required>
+                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter a Group Name" autocomplete="off" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="result_email" class="form-label">Results Email</label>
+                        <input type="email" class="form-control" id="result_email" name="result_email" 
+                               placeholder="group@example.com" autocomplete="off" required>
+                        <small class="text-muted">Restaurant selection results will be sent to this email</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Select Time Limit</label>
+                        <div class="d-grid gap-2 d-md-flex mb-3">
+                            <input type="radio" class="btn-check" name="time_preset" id="preset_2h" value="2">
+                            <label class="btn btn-outline-primary flex-fill" for="preset_2h">2 Hours</label>
+                            
+                            <input type="radio" class="btn-check" name="time_preset" id="preset_6h" value="6">
+                            <label class="btn btn-outline-primary flex-fill" for="preset_6h">6 Hours</label>
+                            
+                            <input type="radio" class="btn-check" name="time_preset" id="preset_24h" value="24" checked>
+                            <label class="btn btn-outline-primary flex-fill" for="preset_24h">1 Day</label>
+                            
+                            <input type="radio" class="btn-check" name="time_preset" id="preset_custom" value="custom">
+                            <label class="btn btn-outline-primary flex-fill" for="preset_custom">Custom</label>
+                        </div>
+                        
+                        <div id="custom_time" class="row" style="display: none;">
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="deadline_hours" name="deadline_hours" 
+                                       placeholder="Hours" min="0" max="168" value="24" autocomplete="off">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" class="form-control" id="deadline_minutes" name="deadline_minutes" 
+                                       placeholder="Minutes" min="0" max="59" value="0" autocomplete="off">
+                            </div>
+                        </div>
+                        <small class="text-muted">How long members have to select restaurants</small>
                     </div>
                     
                     <div class="mb-4">
@@ -38,7 +74,7 @@
                     </div>
                     
                     <button type="submit" class="btn btn-primary">
-                        Start Browsing
+                        Create Group & Select Restaurants
                     </button>
                 </form>
             </div>
@@ -53,16 +89,36 @@
             <div class="card-body">
                 <p>Create a dining group to:</p>
                 <ul>
-                    <li>Swipe on restaurants together</li>
-                    <li>Find matches based on everyone's preferences</li>
-                    <li>Plan meals with people who share your taste</li>
+                    <li>Pre-select restaurants for your group</li>
+                    <li>Share join link with friends</li>
+                    <li>Set time limits with quick presets</li>
+                    <li>Get automatic results via email</li>
                 </ul>
-                
-                <div class="alert alert-info mt-3">
-                    <i class="fas fa-info-circle me-2"></i> After creating a group, you can share the group code with friends to let them join.
-                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const presetRadios = document.querySelectorAll('input[name="time_preset"]');
+    const customTimeDiv = document.getElementById('custom_time');
+    const hoursInput = document.getElementById('deadline_hours');
+    const minutesInput = document.getElementById('deadline_minutes');
+    
+    presetRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customTimeDiv.style.display = 'block';
+            } else {
+                customTimeDiv.style.display = 'none';
+                hoursInput.value = this.value;
+                minutesInput.value = '0';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

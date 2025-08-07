@@ -1,6 +1,6 @@
 /**
  * SyncAndDine Feature Tour
- * Slide-based tour with GIF animations
+ * Updated for current app flow
  */
 
 class FeatureTour {
@@ -12,38 +12,26 @@ class FeatureTour {
             {
                 title: 'Browse Restaurants',
                 icon: '🔍',
-                gif: 'https://picsum.photos/400/250?random=1',
-                description: 'Discover amazing restaurants near you with live Google Places data. Use powerful filters to find exactly what you\'re craving - by location, cuisine, rating, and price range.'
+                gif: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=250&fit=crop&auto=format',
+                description: 'Discover amazing restaurants with live Google Places data. Filter by location, cuisine, rating, and price to find exactly what you want.'
             },
             {
-                title: 'Create Groups',
+                title: 'Create Dining Groups',
                 icon: '👥',
-                gif: 'https://picsum.photos/400/250?random=2',
-                description: 'Invite friends to dining groups and make decisions together. Share group codes via WhatsApp or copy links to bring everyone into the conversation.'
+                gif: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=250&fit=crop&auto=format',
+                description: 'Create groups with friends and set time limits. Share group codes to invite others and make dining decisions together.'
             },
             {
-                title: 'Like & Dislike',
+                title: 'Like & Match Restaurants',
                 icon: '❤️',
-                gif: 'https://picsum.photos/400/250?random=3',
-                description: 'Express your preferences by liking or disliking restaurants. Your choices help create the perfect match for your group with our smart scoring system.'
+                gif: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=250&fit=crop&auto=format',
+                description: 'Like or dislike restaurants in your group. Our system finds matches based on everyone\'s preferences.'
             },
             {
-                title: 'Group Leaderboard',
-                icon: '🏆',
-                gif: 'https://picsum.photos/400/250?random=4',
-                description: 'See real-time rankings based on everyone\'s preferences. Our weighted scoring system (Like = 1.0, Dislike = 0.7) shows the most popular choices at the top.'
-            },
-            {
-                title: 'WhatsApp Integration',
-                icon: '💬',
-                gif: 'https://picsum.photos/400/250?random=5',
-                description: 'Connect your WhatsApp groups to get final restaurant results delivered automatically. Set time limits and receive formatted results when the deadline is reached.'
-            },
-            {
-                title: 'Smart Matching',
-                icon: '✨',
-                gif: 'https://picsum.photos/400/250?random=6',
-                description: 'Our algorithm finds restaurants everyone will love. Get perfect matches when all members agree, or see top recommendations based on group preferences.'
+                title: 'Get Email Results',
+                icon: '📧',
+                gif: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=250&fit=crop&auto=format',
+                description: 'When the timer expires, get detailed results sent to your email with the best restaurant matches for your group.'
             }
         ];
     }
@@ -56,7 +44,6 @@ class FeatureTour {
         this.createModal();
         this.showSlide();
         
-        // Mark as seen
         localStorage.setItem('syncanddine_tour_seen', 'true');
     }
 
@@ -66,7 +53,7 @@ class FeatureTour {
         this.modal.innerHTML = `
             <div class="feature-tour-modal">
                 <div class="feature-tour-header">
-                    <h3>🍽️ Welcome to SyncAndDine!</h3>
+                    <h3>Welcome to SyncAndDine</h3>
                     <button class="feature-tour-close">&times;</button>
                 </div>
                 <div class="feature-tour-content">
@@ -94,18 +81,15 @@ class FeatureTour {
         
         document.body.appendChild(this.modal);
         
-        // Event listeners
         this.modal.querySelector('.feature-tour-close').onclick = () => this.closeTour();
         this.modal.querySelector('.tour-skip').onclick = () => this.closeTour();
         this.modal.querySelector('.tour-prev').onclick = () => this.prevSlide();
         this.modal.querySelector('.tour-next').onclick = () => this.nextSlide();
         
-        // ESC key to close
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isActive) this.closeTour();
         });
         
-        // Create indicators
         this.createIndicators();
     }
 
@@ -125,18 +109,15 @@ class FeatureTour {
         const slide = this.slides[this.currentSlide];
         if (!slide) return;
         
-        // Update content
         this.modal.querySelector('.feature-gif').src = slide.gif;
         this.modal.querySelector('.slide-icon').textContent = slide.icon;
         this.modal.querySelector('.slide-title').textContent = slide.title;
         this.modal.querySelector('.slide-description').textContent = slide.description;
         
-        // Update indicators
         this.modal.querySelectorAll('.slide-indicator').forEach((indicator, index) => {
             indicator.classList.toggle('active', index === this.currentSlide);
         });
         
-        // Update buttons
         this.modal.querySelector('.tour-prev').style.display = 
             this.currentSlide === 0 ? 'none' : 'inline-block';
         this.modal.querySelector('.tour-next').textContent = 
@@ -176,12 +157,13 @@ class FeatureTour {
     }
 }
 
-// Global feature tour instance
 window.featureTour = new FeatureTour();
 
-// Auto-show tour for new users
+function showAppTour() {
+    window.featureTour.showTour();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-show for new users (with delay to let page load)
     if (window.featureTour.shouldShowTour()) {
         setTimeout(() => {
             window.featureTour.showTour();
